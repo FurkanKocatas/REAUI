@@ -28,3 +28,11 @@ Native decompiler integrations and Linux-specific hardware/recording adapters re
 1. Expand browser coverage for long conversations, file uploads, interruption/reconnect, and agent approval interactions.
 2. Configure a native analysis engine on the intended machine and test an actual binary.
 3. If needed, add portable investigation import with path remapping and optional progressive tool discovery for lower agent context usage.
+
+## Checkpoint 3 — clean-machine verification and handoff
+
+Implementation commit `9c0e89d` passed the [fresh Ubuntu GitHub Actions run](https://github.com/FurkanKocatas/REAUI/actions/runs/38397991580): checkout with pinned submodule, Node 24.18, `npm ci`, full `npm run setup`, ten tests, and formatting. This verifies the documented home-computer setup without relying on the original machine's sibling REA checkout.
+
+The original development machine now runs `npm start` from this repository, using its own `vendor/rea` engine and production assets at `http://127.0.0.1:4318`. Both local provider connections report signed in. A fresh sample investigation was created through the production UI. Development-only integration sessions were archived locally; their evidence remains available. Local workspace data and credentials are not part of Git.
+
+To resume at home: clone, `npm ci`, `npm run setup`, sign into the desired CLI(s), then `npm start`. Give Claude Code this repository and tell it to read `CLAUDE.md` and this progress file. Do not assume the previous machine's target paths exist.

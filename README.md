@@ -18,7 +18,7 @@ npm start
 
 Open **http://127.0.0.1:4318**. Setup initializes the pinned `vendor/rea` submodule, installs and builds REA using its pinned Node/npm toolchain, and builds the dashboard. Internet access is needed for setup. Optional external engine submodules are not downloaded recursively.
 
-Verified locally on macOS. Linux clean-build checks are defined in GitHub Actions. Native Windows has not been verified; use a compatible Linux/WSL environment for Linux-only adapters.
+Verified locally on macOS. A fresh Ubuntu checkout also passed setup, build, all ten tests, and formatting in [GitHub Actions](https://github.com/FurkanKocatas/REAUI/actions/runs/38397991580). Native Windows has not been verified; use a compatible Linux/WSL environment for Linux-only adapters.
 
 For development, use `npm run dev` after setup. After pulling updates, run `npm ci && npm run setup` again. The setup script does not install proprietary engines or log into accounts.
 
