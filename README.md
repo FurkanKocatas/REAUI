@@ -2,6 +2,8 @@
 
 A local investigation dashboard for [REA](https://github.com/morluto/rea), with a dark chat workspace, a live tool catalog, evidence records, application graphs, and integrations for **ChatGPT Codex** and **Claude Code**.
 
+**Status:** working local dashboard with live Codex/Claude smoke tests, real REA fixture analysis, desktop/mobile browser checks, and ten regression tests. See [PROGRESS.md](PROGRESS.md) for exact verification and remaining limits.
+
 ## Run on another computer
 
 Install Git and Node.js **24.18+ (24.x) or 26+** with npm. Then:
@@ -15,6 +17,8 @@ npm start
 ```
 
 Open **http://127.0.0.1:4318**. Setup initializes the pinned `vendor/rea` submodule, installs and builds REA using its pinned Node/npm toolchain, and builds the dashboard. Internet access is needed for setup. Optional external engine submodules are not downloaded recursively.
+
+Verified locally on macOS. Linux clean-build checks are defined in GitHub Actions. Native Windows has not been verified; use a compatible Linux/WSL environment for Linux-only adapters.
 
 For development, use `npm run dev` after setup. After pulling updates, run `npm ci && npm run setup` again. The setup script does not install proprietary engines or log into accounts.
 
@@ -52,13 +56,13 @@ Chats, evidence, uploads, and temporary agent workspaces are stored in `.data/` 
 
 Environment variables (set in your shell; `.env` is not loaded automatically):
 
-| Variable | Purpose |
-| --- | --- |
-| `PORT` | Local HTTP port, default `4318` |
-| `REA_ROOT` | Use an existing built REA checkout instead of `vendor/rea` |
-| `REA_WORKBENCH_DATA` | Override the `.data` storage directory |
-| `REA_CODEX_COMMAND` | Codex executable path if absent from PATH |
-| `REA_CLAUDE_COMMAND` | Claude executable path if absent from PATH |
+| Variable             | Purpose                                                    |
+| -------------------- | ---------------------------------------------------------- |
+| `PORT`               | Local HTTP port, default `4318`                            |
+| `REA_ROOT`           | Use an existing built REA checkout instead of `vendor/rea` |
+| `REA_WORKBENCH_DATA` | Override the `.data` storage directory                     |
+| `REA_CODEX_COMMAND`  | Codex executable path if absent from PATH                  |
+| `REA_CLAUDE_COMMAND` | Claude executable path if absent from PATH                 |
 
 REA's documented engine environment variables are inherited by the engine. Do not commit `.env`, credentials, uploads, or investigation exports.
 

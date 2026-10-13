@@ -4,8 +4,15 @@ import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 function run(command, args, cwd = root) {
-  const result = spawnSync(command, args, { cwd, stdio: 'inherit', shell: process.platform === 'win32' });
-  if (result.error || result.status !== 0) { console.error(result.error?.message || `${command} failed (${result.status})`); process.exit(result.status || 1); }
+  const result = spawnSync(command, args, {
+    cwd,
+    stdio: 'inherit',
+    shell: process.platform === 'win32',
+  });
+  if (result.error || result.status !== 0) {
+    console.error(result.error?.message || `${command} failed (${result.status})`);
+    process.exit(result.status || 1);
+  }
 }
 // Do not recursively fetch REA's optional external-engine source submodules.
 run('git', ['submodule', 'update', '--init', 'vendor/rea']);

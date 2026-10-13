@@ -3,3 +3,6 @@ dist/
 .data/
 *.log
 .env
+.env.*
+.DS_Store
+coverage/

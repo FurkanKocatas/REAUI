@@ -1,130 +1,2498 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Plus, Search, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, ChevronDown, ChevronRight, ChevronLeft, ArrowUp, ArrowUpRight, ArrowLeft, ArrowRight, Folder, FolderOpen, File, FileCode2, FileJson, FileBox, Box, Braces, Cpu, Layers, Radio, Globe, Network, Database, Terminal, Settings2, Cable, BookOpen, ScanLine, Workflow, Sparkles, CircleHelp, MoreHorizontal, X, Check, CheckCheck, Copy, Download, Upload, Play, Square, Loader2, RefreshCw, CheckCircle2, AlertCircle, ShieldCheck, ShieldAlert, Clock3, Circle, ExternalLink, Archive, Pencil, SlidersHorizontal, Command, Minus, Maximize2, Bot, Fingerprint, Zap, MessageSquare, Activity, Filter } from 'lucide-react';
+import {
+  Plus,
+  Search,
+  PanelLeftClose,
+  PanelLeftOpen,
+  PanelRightClose,
+  PanelRightOpen,
+  ChevronDown,
+  ChevronRight,
+  ChevronLeft,
+  ArrowUp,
+  ArrowUpRight,
+  ArrowLeft,
+  ArrowRight,
+  Folder,
+  FolderOpen,
+  File,
+  FileCode2,
+  FileJson,
+  FileBox,
+  Box,
+  Braces,
+  Cpu,
+  Layers,
+  Radio,
+  Globe,
+  Network,
+  Database,
+  Terminal,
+  Settings2,
+  Cable,
+  BookOpen,
+  ScanLine,
+  Workflow,
+  Sparkles,
+  CircleHelp,
+  MoreHorizontal,
+  X,
+  Check,
+  CheckCheck,
+  Copy,
+  Download,
+  Upload,
+  Play,
+  Square,
+  Loader2,
+  RefreshCw,
+  CheckCircle2,
+  AlertCircle,
+  ShieldCheck,
+  ShieldAlert,
+  Clock3,
+  Circle,
+  ExternalLink,
+  Archive,
+  Pencil,
+  SlidersHorizontal,
+  Command,
+  Minus,
+  Maximize2,
+  Bot,
+  Fingerprint,
+  Zap,
+  MessageSquare,
+  Activity,
+  Filter,
+} from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { api, setToken, getToken, title, fileName, shortTime, pretty, unpack, category, resolveSchema, initialArgs, download } from './lib';
+import {
+  api,
+  setToken,
+  getToken,
+  title,
+  fileName,
+  shortTime,
+  pretty,
+  unpack,
+  category,
+  resolveSchema,
+  initialArgs,
+  toFormValues,
+  parseFormArgs,
+  download,
+} from './lib';
 
-const icons={ 'Native binaries':Cpu,'Web & applications':Braces,'Mobile':Layers,'Hardware & firmware':Radio,'Formats & data':Database,'Evidence & research':Fingerprint,'Runtime':Activity,'Sessions':Folder };
-const activeStatuses=['queued','running','awaiting_approval'];
-function Logo({large=false}){return <span className={'logo '+(large?'large':'')}><ScanLine/><span className="logo-core"><Braces/></span></span>}
-function ProviderMark({provider}){return provider==='claude'?<span className="claude-mark">✳</span>:<span className="codex-mark"><Workflow size={16}/></span>}
-function IconButton({icon:Icon,label,onClick,...props}){return <button type="button" className="icon-button" title={label} aria-label={label} onClick={onClick} {...props}><Icon size={17}/></button>}
-function Status({status}){const Icon=status==='completed'?CheckCircle2:['failed','interrupted'].includes(status)?AlertCircle:status==='awaiting_approval'?ShieldAlert:activeStatuses.includes(status)?Loader2:Square;return <span className={'status '+status}><Icon size={13} className={status==='running'?'spin':''}/>{status.replaceAll('_',' ')}</span>}
-function Modal({title:heading,subtitle,children,onClose,wide=false}){
-  const ref=useRef(null);
-  useEffect(()=>{const old=document.activeElement;ref.current?.focus();const key=e=>{if(e.key==='Escape')onClose();if(e.key==='Tab'){const nodes=[...ref.current.querySelectorAll('button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),a[href],[tabindex="0"]')];if(!nodes.length)return;const first=nodes[0],last=nodes.at(-1);if(e.shiftKey&&(document.activeElement===first||document.activeElement===ref.current)){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}};document.addEventListener('keydown',key);return()=>{document.removeEventListener('keydown',key);old?.focus();};},[]);
-  return <div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)onClose();}}><section className={'modal '+(wide?'wide':'')} role="dialog" aria-modal="true" aria-label={heading} ref={ref} tabIndex={-1}><div className="modal-head"><div><h2>{heading}</h2>{subtitle&&<p>{subtitle}</p>}</div><IconButton icon={X} label="Close dialog" onClick={onClose}/></div>{children}</section></div>
+const icons = {
+  'Native binaries': Cpu,
+  'Web & applications': Braces,
+  Mobile: Layers,
+  'Hardware & firmware': Radio,
+  'Formats & data': Database,
+  'Evidence & research': Fingerprint,
+  Runtime: Activity,
+  Sessions: Folder,
+};
+const activeStatuses = ['queued', 'running', 'awaiting_approval'];
+function Logo({ large = false }) {
+  return (
+    <span className={'logo ' + (large ? 'large' : '')}>
+      <ScanLine />
+      <span className="logo-core">
+        <Braces />
+      </span>
+    </span>
+  );
+}
+function ProviderMark({ provider }) {
+  return provider === 'claude' ? (
+    <span className="claude-mark">✳</span>
+  ) : (
+    <span className="codex-mark">
+      <Workflow size={16} />
+    </span>
+  );
+}
+function IconButton({ icon: Icon, label, onClick, ...props }) {
+  return (
+    <button
+      type="button"
+      className="icon-button"
+      title={label}
+      aria-label={label}
+      onClick={onClick}
+      {...props}
+    >
+      <Icon size={17} />
+    </button>
+  );
+}
+function Status({ status }) {
+  const Icon =
+    status === 'completed'
+      ? CheckCircle2
+      : ['failed', 'interrupted'].includes(status)
+        ? AlertCircle
+        : status === 'awaiting_approval'
+          ? ShieldAlert
+          : activeStatuses.includes(status)
+            ? Loader2
+            : Square;
+  return (
+    <span className={'status ' + status}>
+      <Icon size={13} className={status === 'running' ? 'spin' : ''} />
+      {status.replaceAll('_', ' ')}
+    </span>
+  );
+}
+function Modal({ title: heading, subtitle, children, onClose, wide = false }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const old = document.activeElement;
+    ref.current?.focus();
+    const key = (e) => {
+      if (e.key === 'Escape') onClose();
+      if (e.key === 'Tab') {
+        const nodes = [
+          ...ref.current.querySelectorAll(
+            'button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),a[href],[tabindex="0"]',
+          ),
+        ];
+        if (!nodes.length) return;
+        const first = nodes[0],
+          last = nodes.at(-1);
+        if (
+          e.shiftKey &&
+          (document.activeElement === first || document.activeElement === ref.current)
+        ) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    document.addEventListener('keydown', key);
+    return () => {
+      document.removeEventListener('keydown', key);
+      old?.focus();
+    };
+  }, []);
+  return (
+    <div
+      className="modal-backdrop"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <section
+        className={'modal ' + (wide ? 'wide' : '')}
+        role="dialog"
+        aria-modal="true"
+        aria-label={heading}
+        ref={ref}
+        tabIndex={-1}
+      >
+        <div className="modal-head">
+          <div>
+            <h2>{heading}</h2>
+            {subtitle && <p>{subtitle}</p>}
+          </div>
+          <IconButton icon={X} label="Close dialog" onClick={onClose} />
+        </div>
+        {children}
+      </section>
+    </div>
+  );
 }
 
-export default function App(){
-  const [boot,setBoot]=useState(null),[sessions,setSessions]=useState([]),[runs,setRuns]=useState([]),[providers,setProviders]=useState([]),[tools,setTools]=useState([]),[engine,setEngine]=useState(null);
-  const [sessionId,setSessionId]=useState(()=>localStorage.getItem('rea.session')||''),[view,setView]=useState('investigate'),[left,setLeft]=useState(true),[right,setRight]=useState(true),[modal,setModal]=useState(null),[toast,setToast]=useState(''),[connected,setConnected]=useState(false),[provider,setProvider]=useState('codex'),[model,setModel]=useState(''),[draftTarget,setDraftTarget]=useState(''),[prompt,setPrompt]=useState(''),[submitting,setSubmitting]=useState(false);
-  const endRef=useRef(),toastTimer=useRef(),fileInput=useRef();
-  const notify=message=>{setToast(message);clearTimeout(toastTimer.current);toastTimer.current=setTimeout(()=>setToast(''),6000);};
-  const upsertSession=s=>setSessions(old=>[s,...old.filter(x=>x.id!==s.id)].sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt)));
-  const upsertRun=r=>setRuns(old=>[r,...old.filter(x=>x.id!==r.id)].sort((a,b)=>b.startedAt.localeCompare(a.startedAt)));
-  async function loadTools(){try{setTools((await api('/tools')).tools);}catch(e){notify(e.message);}}
-  async function loadStatus(id){try{setEngine(await api('/status'+(id?'?session='+id:'')));}catch(e){notify(e.message);}}
-  useEffect(()=>{
-    let events,disposed=false;
-    api('/bootstrap').then(data=>{if(disposed)return;setToken(data.token);setBoot(data);setSessions(data.sessions);setRuns(data.runs);setProviders(data.providers);setProvider(data.settings.provider||'codex');if(!data.sessions.some(s=>s.id===sessionId))setSessionId('');loadTools();
-      events=new EventSource('/api/events?token='+data.token);events.onopen=()=>setConnected(true);events.onerror=()=>setConnected(false);
-      events.addEventListener('session',e=>upsertSession(JSON.parse(e.data)));
-      events.addEventListener('run',e=>upsertRun(JSON.parse(e.data)));
-      events.addEventListener('message',e=>{const data=JSON.parse(e.data);setSessions(old=>old.map(s=>s.id!==data.sessionId?s:{...s,messages:s.messages.map(m=>m.id===data.message.id?data.message:m)}));});
-      events.addEventListener('ready',e=>{const d=JSON.parse(e.data);setProviders(d.providers);loadTools();loadStatus();});
-      events.addEventListener('error',e=>{if(e.data)notify(JSON.parse(e.data).message);});
-    }).catch(e=>notify(e.message));return()=>{disposed=true;events?.close();};
-  },[]);
-  useEffect(()=>{localStorage.setItem('rea.session',sessionId);if(boot)loadStatus(sessionId);const s=sessions.find(x=>x.id===sessionId);if(s){setProvider(s.provider);setModel(s.model||'');}},[sessionId,!!boot]);
-  useEffect(()=>{const fn=e=>{if((e.metaKey||e.ctrlKey)&&e.key==='k'){e.preventDefault();setModal({type:'command'});}if((e.metaKey||e.ctrlKey)&&e.shiftKey&&e.key.toLowerCase()==='o'){e.preventDefault();newInvestigation();}};document.addEventListener('keydown',fn);return()=>document.removeEventListener('keydown',fn);},[tools]);
-  const session=sessions.find(s=>s.id===sessionId),target=session?.target||draftTarget;
-  const sessionRuns=runs.filter(r=>r.sessionId===sessionId),messages=session?.messages||[],running=messages.some(m=>m.status==='running'),pending=sessionRuns.filter(r=>r.status==='awaiting_approval');
-  const availability=useMemo(()=>{const result={};for(const group of engine?.tool_availability?.groups||[])for(const name of group.names)result[name]=group;return result;},[engine]);
-  useEffect(()=>{if(view==='investigate')endRef.current?.scrollIntoView({behavior:'smooth',block:'end'});},[messages.length,messages.at(-1)?.text,sessionRuns.length,view]);
-  async function ensureSession(options={}){if(session)return session;const s=await api('/sessions',{method:'POST',body:{title:'New investigation',target:draftTarget,provider,model,...options}});upsertSession(s);setSessionId(s.id);return s;}
-  function newInvestigation(){setSessionId('');setDraftTarget('');setPrompt('');setView('investigate');}
-  async function patchSession(values){if(!session)return;const s=await api('/sessions/'+session.id,{method:'PATCH',body:values});upsertSession(s);}
-  async function chooseTarget(path){try{if(session)await patchSession({target:path});else setDraftTarget(path);setModal(null);}catch(e){notify(e.message);}}
-  async function upload(file){if(!file)return;try{notify('Copying '+file.name+' into your local workspace…');const r=await fetch('/api/upload',{method:'POST',headers:{'X-Workbench-Token':getToken(),'X-File-Name':encodeURIComponent(file.name)},body:file});const data=await r.json();if(!r.ok)throw Error(data.error);await chooseTarget(data.path);notify('Target attached');}catch(e){notify(e.message);}finally{fileInput.current.value='';}}
-  async function send(e){e?.preventDefault();if(!prompt.trim()||running||submitting)return;setSubmitting(true);const text=prompt;try{const s=await ensureSession();await api('/sessions/'+s.id+'/chat',{method:'POST',body:{prompt:text,provider,model}});setPrompt('');}catch(e){notify(e.message);}finally{setSubmitting(false);}}
-  async function runTool(tool,args,approved=false){try{const s=await ensureSession();const r=await api('/runs',{method:'POST',body:{sessionId:s.id,tool:tool.name,args,approved}});upsertRun(r);setModal(null);setView('investigate');}catch(e){notify(e.message);}}
-  function toolDialog(name,seed){const tool=tools.find(t=>t.name===name);if(tool)setModal({type:'tool',tool,seed});else notify('Tool catalog is still loading. Try again in a moment.');}
-  async function demo(){try{const s=await api('/sessions',{method:'POST',body:{title:'Electron sample investigation',target:boot.samplePath,provider,model}});upsertSession(s);setSessionId(s.id);setDraftTarget('');setView('investigate');const r=await api('/runs',{method:'POST',body:{sessionId:s.id,tool:'analyze_javascript_application',args:{input_path:boot.samplePath}}});upsertRun(r);}catch(e){notify(e.message);}}
-  async function exportSession(){try{download((session?.title||'investigation')+'.json',await api('/sessions/'+sessionId+'/export'));}catch(e){notify(e.message);}}
-  async function review(run,allow){try{await api('/runs/'+run.id+'/review',{method:'POST',body:{allow}});}catch(e){notify(e.message);}}
-  const openResult=run=>setModal({type:'result',run});
-  const navigation=[{id:'investigate',label:'Investigations',icon:MessageSquare},{id:'tools',label:'Tool library',icon:Box,count:tools.length||null},{id:'evidence',label:'Evidence',icon:Fingerprint,count:runs.filter(r=>r.status==='completed').length||null},{id:'connections',label:'Connections',icon:Cable}];
-  return <div className={'app-shell '+(!left?'left-hidden ':'')+(!right?'right-hidden':'')}>
-    {left&&<aside className="sidebar"><div className="brand"><Logo/><span>rea<span className="brand-sub">workbench</span></span><IconButton icon={PanelLeftClose} label="Collapse sidebar" onClick={()=>setLeft(false)}/></div><button className="new-investigation" onClick={newInvestigation}><Plus size={17}/>New investigation<span>⌘ ⇧ O</span></button><nav>{navigation.map(n=><button key={n.id} className={'nav-item '+(view===n.id?'active':'')} onClick={()=>setView(n.id)}><n.icon size={17}/>{n.label}{n.count&&<span className="nav-count">{n.count}</span>}</button>)}</nav><div className="sidebar-divider"/><div className="sidebar-section"><span>YOUR WORKSPACE</span><IconButton icon={Search} label="Search investigations and tools" onClick={()=>setModal({type:'command'})}/></div><div className="session-list">{sessions.filter(s=>!s.archived).map(s=><button key={s.id} className={'session-item '+(sessionId===s.id?'selected':'')} onClick={()=>{setSessionId(s.id);setView('investigate');}}><Folder size={15}/><span>{s.title}</span>{s.messages.some(m=>m.status==='running')&&<span className="running-dot"/>}</button>)}{!sessions.some(s=>!s.archived)&&<div className="empty-sidebar">Your investigations live here.<br/>Start with a question or a target.</div>}</div><button className="sample-link" onClick={demo}><FileCode2 size={17}/><div>Explore a sample<span>No setup needed</span></div><ArrowUpRight size={15}/></button><div className="sidebar-bottom"><button onClick={()=>setModal({type:'help'})}><BookOpen size={16}/>Quick start<ArrowUpRight size={13}/></button><button onClick={()=>setView('connections')}><span className={'connection-dot '+(connected?'online':'')}/><span>Local workspace<small>{connected?'Connected to your machine':'Reconnecting…'}</small></span><Settings2 size={17}/></button></div></aside>}
-    <main className="main"><header className="topbar"><div>{!left&&<IconButton icon={PanelLeftOpen} label="Expand sidebar" onClick={()=>setLeft(true)}/>}<FolderOpen size={17}/><span className="breadcrumb">Workspace</span><ChevronRight size={13}/><button className="page-title" onClick={()=>session&&setModal({type:'rename'})}>{view==='investigate'?(session?.title||'New investigation'):navigation.find(n=>n.id===view)?.label}</button></div><div><span className="local-badge"><span/>LOCAL</span>{session&&<IconButton icon={Download} label="Export investigation" onClick={exportSession}/>}<IconButton icon={right?PanelRightClose:PanelRightOpen} label={right?'Hide inspector':'Show inspector'} onClick={()=>setRight(!right)}/></div></header>
-      {view==='investigate'&&<><div className="conversation-scroll">
-        {!messages.length&&!sessionRuns.length?<div className="welcome"><div className="welcome-eyebrow"><span/>YOUR INVESTIGATION STARTS HERE</div><div className="welcome-logo"><Logo large/></div><h1>Understand what’s<br/><span>under the surface.</span></h1><p>From an app’s behavior to its binary.<br/>Bring a target. Follow the evidence.</p><div className="starter-grid">{[{name:'Application',description:'Trace features & dependencies',icon:Braces,tool:'analyze_javascript_application',className:'sage'},{name:'Native binary',description:'Inspect functions & assembly',icon:Cpu,tool:'open_binary',className:'blue'},{name:'Firmware',description:'Explore devices & protocols',icon:Radio,tool:'inspect_firmware_regions',className:'sand'},{name:'Network capture',description:'Understand recorded traffic',icon:Network,tool:'inspect_packet_capture',className:'lilac'}].map(c=><button className="starter-card" key={c.name} onClick={()=>toolDialog(c.tool)}><span className={'starter-icon '+c.className}><c.icon size={21}/></span><ArrowUpRight className="starter-arrow" size={15}/><strong>{c.name}</strong><small>{c.description}</small></button>)}</div><button className="demo-link" onClick={demo}><Play size={12}/>Just looking around? Try the Electron sample<ArrowRight size={13}/></button></div>:<div className="conversation"><div className="conversation-heading"><span className="label">INVESTIGATION</span><h2>{session?.title}</h2>{target&&<span className="target-caption"><FileBox size={14}/>{target}</span>}</div>{messages.map(m=><div key={m.id} className={'message '+m.role}><div className="message-heading">{m.role==='assistant'?<ProviderMark provider={m.provider}/>:<span className="user-avatar">Y</span>}<strong>{m.role==='assistant'?(m.provider==='claude'?'Claude':'Codex'):'You'}</strong><span>{shortTime(m.createdAt)}</span>{m.status==='running'&&<Loader2 size={13} className="spin"/>}</div>{m.text?<div className="markdown"><ReactMarkdown remarkPlugins={[remarkGfm]} components={{a:props=><a {...props} target="_blank" rel="noreferrer"/>}}>{m.text}</ReactMarkdown></div>:<div className="thinking"><span/><span/><span/><small>{m.activity?.at(-1)||'Connecting to your agent…'}</small></div>}{m.activity?.length>0&&<details className="agent-activity"><summary><Activity size={12}/>{m.activity.length} activity updates</summary>{m.activity.map((a,i)=><div key={i}>{a}</div>)}</details>}{['failed','cancelled','interrupted'].includes(m.status)&&<Status status={m.status}/>}<div className="message-actions">{m.text&&<IconButton icon={Copy} label="Copy message" onClick={()=>navigator.clipboard.writeText(m.text).then(()=>notify('Copied'))}/>}</div></div>)}{sessionRuns.length>0&&<div className="run-section"><div className="section-title"><Workflow size={15}/>Analysis activity<span>{sessionRuns.length}</span></div>{[...sessionRuns].reverse().map(run=><RunCard key={run.id} run={run} onOpen={()=>openResult(run)} onCancel={()=>api('/runs/'+run.id+'/cancel',{method:'POST'}).catch(e=>notify(e.message))} onReview={allow=>review(run,allow)}/>)}</div>}<div ref={endRef}/></div>}
-      </div><div className="composer-wrap">{pending.length>0&&<div className="approval-banner"><ShieldAlert size={16}/>{pending.length} action{pending.length===1?'':'s'} waiting for your review<button onClick={()=>setModal({type:'review',run:pending[0]})}>Review action<ArrowRight size={14}/></button></div>}<form className="composer" onSubmit={send} onDragOver={e=>e.preventDefault()} onDrop={e=>{e.preventDefault();upload(e.dataTransfer.files[0]);}}>{target&&<div className="target-chip"><FileBox size={13}/><span title={target}>{fileName(target)}</span><button type="button" aria-label="Remove target" onClick={()=>chooseTarget('')}><X size={12}/></button></div>}<textarea aria-label="Message your investigation agent" placeholder={target?'What would you like to understand about '+fileName(target)+'?':'Ask about an app, binary, or protocol…'} value={prompt} onChange={e=>setPrompt(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();send();}}}/><div className="composer-toolbar"><div><IconButton icon={Plus} label="Attach local target" onClick={()=>setModal({type:'files'})}/><button type="button" className="attach-label" onClick={()=>setModal({type:'files'})}>{target?'Change target':'Attach a target'}</button><span className="toolbar-separator"/><button type="button" className="agent-picker" onClick={()=>setModal({type:'provider'})}><ProviderMark provider={provider}/>{provider==='claude'?'Claude':'Codex'}<ChevronDown size={13}/></button><span className="model-label">{model||'Default model'}</span></div><div><span className="mode-chip"><ShieldCheck size={12}/>Review actions</span>{running?<button className="send-button stop" type="button" aria-label="Stop agent" onClick={()=>api('/sessions/'+sessionId+'/stop',{method:'POST'}).catch(e=>notify(e.message))}><Square size={15}/></button>:<button className="send-button" type="submit" aria-label="Send message" disabled={!prompt.trim()||submitting||!connected}>{submitting?<Loader2 size={18} className="spin"/>:<ArrowUp size={19}/>}</button>}</div></div></form><div className="composer-caption"><span><span className="tiny-dot"/>Analysis runs locally. Agent messages use your selected provider.</span><span>↵ send <span>·</span> ⇧ ↵ new line</span></div></div></>}
-      {view==='tools'&&<ToolLibrary tools={tools} availability={availability} onSelect={tool=>setModal({type:'tool',tool})}/>}
-      {view==='evidence'&&<EvidenceLibrary runs={runs} sessions={sessions} onOpen={openResult} onSelectSession={id=>{setSessionId(id);setView('investigate');}}/>}
-      {view==='connections'&&<Connections providers={providers} engine={engine} tools={tools} boot={boot} onRefresh={async()=>{try{setProviders(await api('/providers'));await loadStatus(sessionId);notify('Connection status refreshed');}catch(e){notify(e.message);}}}/>}
-    </main>
-    {right&&<aside className="inspector"><div className="inspector-header"><SlidersHorizontal size={15}/><strong>Investigation</strong><span className="subtle-badge">{session?'Active':'New'}</span></div><div className="inspector-body"><div className="section-label">TARGET<IconButton icon={Plus} label="Select a target" onClick={()=>setModal({type:'files'})}/></div><button className={'target-drop '+(target?'has-target':'')} onClick={()=>setModal({type:'files'})}><span><FileBox size={24}/></span><strong>{target?fileName(target):'Add your first target'}</strong><p>{target?target:'An application, binary, firmware,\nor a recorded capture.'}</p><small>{target?'Click to change target':'Browse local files'}<ArrowRight size={12}/></small></button>{target&&<button className="inspect-target" onClick={()=>toolDialog(/\.asar$/.test(target)?'analyze_javascript_application':'inspect_artifact')}><ScanLine size={14}/>Inspect target<ArrowUpRight size={13}/></button>}<div className="inspector-divider"/><div className="section-label">WORKSPACE<IconButton icon={RefreshCw} label="Refresh engine status" onClick={()=>loadStatus(sessionId)}/></div><div className="workspace-line"><span className="service-icon"><Terminal size={16}/></span><div>REA engine<small>{tools.length?`${tools.length} tools discovered`:'Discovering tools…'}</small></div><span className={'connection-dot '+(tools.length?'online':'')}/></div>{providers.map(p=><button key={p.id} className="workspace-line agent-line" onClick={()=>setView('connections')}><span className="service-icon"><ProviderMark provider={p.id}/></span><div>{p.id==='codex'?'ChatGPT Codex':'Claude Code'}<small>{p.loggedIn?'Signed in':p.installed?'Sign-in required':'Not installed'}</small></div><span className={'connection-dot '+(p.loggedIn?'online':'')}/></button>)}<div className="inspector-divider"/><div className="section-label">EVIDENCE<span>{sessionRuns.filter(r=>r.status==='completed').length}</span></div>{sessionRuns.length?<div className="mini-runs">{sessionRuns.slice(0,5).map(r=><button key={r.id} onClick={()=>openResult(r)}><FileJson size={14}/><span>{title(r.tool)}<small>{r.summary?.evidenceId?.slice(0,16)||r.status}</small></span><ChevronRight size={13}/></button>)}</div>:<div className="empty-evidence"><Fingerprint size={24}/><p>Findings will appear here.<br/>Every result keeps its source.</p></div>}<div className="inspector-divider"/><div className="section-label">CAPABILITIES</div><div className="capability-tags"><span>Static analysis</span><span>Feature tracing</span><span>Evidence graphs</span><span>Runtime tools</span></div><button className="all-tools-link" onClick={()=>setView('tools')}>Explore all tools<ArrowRight size={13}/></button></div><div className="inspector-footer"><ShieldCheck size={15}/><p>Your files stay on this machine.<br/><span>Selected evidence may be sent to your agent.</span></p></div></aside>}
-    <input type="file" hidden ref={fileInput} onChange={e=>upload(e.target.files[0])}/>
-    {toast&&<div className="toast" role="status"><CircleHelp size={16}/>{toast}<IconButton icon={X} label="Dismiss notification" onClick={()=>setToast('')}/></div>}
-    {!boot&&<div className="loading-overlay"><Logo/><Loader2 className="spin" size={18}/><p>Connecting to REA Workbench…</p>{toast&&<button onClick={()=>location.reload()}>Retry connection</button>}</div>}
-    {modal?.type==='tool'&&<ToolDialog tool={modal.tool} target={target} seed={modal.seed} availability={availability[modal.tool.name]} onClose={()=>setModal(null)} onRun={runTool} onBrowse={()=>setModal({type:'files'})}/>}
-    {modal?.type==='files'&&<FilePicker initialPath={target?(target.includes('.')?target.slice(0,target.lastIndexOf('/')):target):boot?.defaultPath} onClose={()=>setModal(null)} onSelect={chooseTarget} onUpload={()=>fileInput.current.click()}/>}
-    {modal?.type==='result'&&<ResultViewer run={modal.run} onClose={()=>setModal(null)} notify={notify}/>}
-    {modal?.type==='provider'&&<ProviderDialog providers={providers} provider={provider} model={model} onClose={()=>setModal(null)} onSave={(p,m)=>{setProvider(p);setModel(m);if(session)patchSession({provider:p,model:m}).catch(e=>notify(e.message));setModal(null);}}/>}
-    {modal?.type==='command'&&<CommandPalette tools={tools} sessions={sessions} onClose={()=>setModal(null)} onTool={tool=>setModal({type:'tool',tool})} onSession={id=>{setSessionId(id);setView('investigate');setModal(null);}}/>}
-    {modal?.type==='rename'&&<RenameDialog session={session} onClose={()=>setModal(null)} onSave={async values=>{try{await patchSession(values);setModal(null);if(values.archived)newInvestigation();}catch(e){notify(e.message);}}/>}
-    {modal?.type==='review'&&<Modal title="Review agent action" subtitle={title(modal.run.tool)} onClose={()=>setModal(null)}><div className="modal-content"><p>The agent requested this operation. Review the selected target and arguments before allowing it.</p><pre className="json-block">{pretty(modal.run.args)}</pre></div><div className="modal-footer"><button className="secondary" onClick={()=>{review(modal.run,false);setModal(null);}}>Decline</button><button className="primary" onClick={()=>{review(modal.run,true);setModal(null);}}>Allow this action</button></div></Modal>}
-    {modal?.type==='help'&&<Modal title="A workspace for understanding software" subtitle="Start small. Follow one question through the evidence." onClose={()=>setModal(null)}><div className="modal-content help-content"><div><span>01</span><h3>Choose a target</h3><p>Browse to a local app, archive, binary, or recording. Selecting a directory preserves its supporting files.</p></div><div><span>02</span><h3>Ask or inspect</h3><p>Chat with your signed-in Codex or Claude, or run any REA tool from the library. A model override is optional.</p></div><div><span>03</span><h3>Follow the evidence</h3><p>Open a result to inspect findings, source relationships, or the complete JSON. Export an investigation to keep its conversation and records together.</p></div><div className="notice">External engines have their own prerequisites. Check Connections for actual availability. Live engine sessions reset when the server restarts; saved results remain.</div></div><div className="modal-footer"><button className="primary" onClick={()=>{setModal(null);demo();}}>Try the bundled sample<ArrowRight size={15}/></button></div></Modal>}
-  </div>
+export default function App() {
+  const [boot, setBoot] = useState(null),
+    [sessions, setSessions] = useState([]),
+    [runs, setRuns] = useState([]),
+    [providers, setProviders] = useState([]),
+    [tools, setTools] = useState([]),
+    [engine, setEngine] = useState(null);
+  const [sessionId, setSessionId] = useState(() => localStorage.getItem('rea.session') || ''),
+    [view, setView] = useState('investigate'),
+    [left, setLeft] = useState(true),
+    [right, setRight] = useState(true),
+    [modal, setModal] = useState(null),
+    [toast, setToast] = useState(''),
+    [connected, setConnected] = useState(false),
+    [provider, setProvider] = useState('codex'),
+    [model, setModel] = useState(''),
+    [draftTarget, setDraftTarget] = useState(''),
+    [prompt, setPrompt] = useState(''),
+    [submitting, setSubmitting] = useState(false);
+  const endRef = useRef(),
+    toastTimer = useRef(),
+    fileInput = useRef();
+  const notify = (message) => {
+    setToast(message);
+    clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(''), 6000);
+  };
+  const upsertSession = (s) =>
+    setSessions((old) =>
+      [s, ...old.filter((x) => x.id !== s.id)].sort((a, b) =>
+        b.updatedAt.localeCompare(a.updatedAt),
+      ),
+    );
+  const upsertRun = (r) =>
+    setRuns((old) =>
+      [r, ...old.filter((x) => x.id !== r.id)].sort((a, b) =>
+        b.startedAt.localeCompare(a.startedAt),
+      ),
+    );
+  async function loadTools() {
+    try {
+      setTools((await api('/tools')).tools);
+    } catch (e) {
+      notify(e.message);
+    }
+  }
+  async function loadStatus(id) {
+    try {
+      setEngine(await api('/status' + (id ? '?session=' + id : '')));
+    } catch (e) {
+      notify(e.message);
+    }
+  }
+  useEffect(() => {
+    let events,
+      disposed = false;
+    api('/bootstrap')
+      .then((data) => {
+        if (disposed) return;
+        setToken(data.token);
+        setBoot(data);
+        setSessions(data.sessions);
+        setRuns(data.runs);
+        setProviders(data.providers);
+        setProvider(data.settings.provider || 'codex');
+        if (!data.sessions.some((s) => s.id === sessionId)) setSessionId('');
+        loadTools();
+        events = new EventSource('/api/events?token=' + data.token);
+        events.onopen = () => setConnected(true);
+        events.onerror = () => setConnected(false);
+        events.addEventListener('session', (e) => upsertSession(JSON.parse(e.data)));
+        events.addEventListener('run', (e) => upsertRun(JSON.parse(e.data)));
+        events.addEventListener('message', (e) => {
+          const data = JSON.parse(e.data);
+          setSessions((old) =>
+            old.map((s) =>
+              s.id !== data.sessionId
+                ? s
+                : {
+                    ...s,
+                    messages: s.messages.map((m) => (m.id === data.message.id ? data.message : m)),
+                  },
+            ),
+          );
+        });
+        events.addEventListener('ready', (e) => {
+          const d = JSON.parse(e.data);
+          setProviders(d.providers);
+          loadTools();
+          loadStatus();
+        });
+        events.addEventListener('error', (e) => {
+          if (e.data) notify(JSON.parse(e.data).message);
+        });
+      })
+      .catch((e) => notify(e.message));
+    return () => {
+      disposed = true;
+      events?.close();
+    };
+  }, []);
+  useEffect(() => {
+    localStorage.setItem('rea.session', sessionId);
+    if (boot) loadStatus(sessionId);
+    const s = sessions.find((x) => x.id === sessionId);
+    if (s) {
+      setProvider(s.provider);
+      setModel(s.model || '');
+    }
+  }, [sessionId, !!boot]);
+  useEffect(() => {
+    const fn = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setModal({ type: 'command' });
+      }
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'o') {
+        e.preventDefault();
+        newInvestigation();
+      }
+    };
+    document.addEventListener('keydown', fn);
+    return () => document.removeEventListener('keydown', fn);
+  }, [tools]);
+  const session = sessions.find((s) => s.id === sessionId),
+    target = session?.target || draftTarget;
+  const sessionRuns = runs.filter((r) => r.sessionId === sessionId),
+    messages = session?.messages || [],
+    running = messages.some((m) => m.status === 'running'),
+    pending = sessionRuns.filter((r) => r.status === 'awaiting_approval');
+  useEffect(() => {
+    if (boot && sessionId) loadStatus(sessionId);
+  }, [sessionRuns[0]?.id, sessionRuns[0]?.status]);
+  const availability = useMemo(() => {
+    const result = {};
+    for (const group of engine?.tool_availability?.groups || [])
+      for (const name of group.names) result[name] = group;
+    return result;
+  }, [engine]);
+  useEffect(() => {
+    if (view === 'investigate')
+      endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }, [messages.length, messages.at(-1)?.text, sessionRuns.length, view]);
+  async function ensureSession(options = {}) {
+    if (session) return session;
+    const s = await api('/sessions', {
+      method: 'POST',
+      body: { title: 'New investigation', target: draftTarget, provider, model, ...options },
+    });
+    upsertSession(s);
+    setSessionId(s.id);
+    return s;
+  }
+  function newInvestigation() {
+    setSessionId('');
+    setDraftTarget('');
+    setPrompt('');
+    setView('investigate');
+  }
+  async function patchSession(values) {
+    if (!session) return;
+    const s = await api('/sessions/' + session.id, { method: 'PATCH', body: values });
+    upsertSession(s);
+  }
+  async function chooseTarget(path) {
+    try {
+      if (session) await patchSession({ target: path });
+      else setDraftTarget(path);
+      setModal(null);
+    } catch (e) {
+      notify(e.message);
+    }
+  }
+  async function upload(file) {
+    if (!file) return;
+    try {
+      notify('Copying ' + file.name + ' into your local workspace…');
+      const r = await fetch('/api/upload', {
+        method: 'POST',
+        headers: { 'X-Workbench-Token': getToken(), 'X-File-Name': encodeURIComponent(file.name) },
+        body: file,
+      });
+      const data = await r.json();
+      if (!r.ok) throw Error(data.error);
+      await chooseTarget(data.path);
+      notify('Target attached');
+    } catch (e) {
+      notify(e.message);
+    } finally {
+      fileInput.current.value = '';
+    }
+  }
+  async function send(e) {
+    e?.preventDefault();
+    if (!prompt.trim() || running || submitting) return;
+    setSubmitting(true);
+    const text = prompt;
+    try {
+      const s = await ensureSession();
+      await api('/sessions/' + s.id + '/chat', {
+        method: 'POST',
+        body: { prompt: text, provider, model },
+      });
+      setPrompt('');
+    } catch (e) {
+      notify(e.message);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+  async function runTool(tool, args, approved = false) {
+    try {
+      const s = await ensureSession();
+      const r = await api('/runs', {
+        method: 'POST',
+        body: { sessionId: s.id, tool: tool.name, args, approved },
+      });
+      upsertRun(r);
+      setModal(null);
+      setView('investigate');
+    } catch (e) {
+      notify(e.message);
+      throw e;
+    }
+  }
+  function toolDialog(name, seed) {
+    const tool = tools.find((t) => t.name === name);
+    if (tool) setModal({ type: 'tool', tool, seed });
+    else notify('Tool catalog is still loading. Try again in a moment.');
+  }
+  async function demo() {
+    try {
+      const s = await api('/sessions', {
+        method: 'POST',
+        body: { title: 'Electron sample investigation', target: boot.samplePath, provider, model },
+      });
+      upsertSession(s);
+      setSessionId(s.id);
+      setDraftTarget('');
+      setView('investigate');
+      const r = await api('/runs', {
+        method: 'POST',
+        body: {
+          sessionId: s.id,
+          tool: 'analyze_javascript_application',
+          args: { input_path: boot.samplePath },
+        },
+      });
+      upsertRun(r);
+    } catch (e) {
+      notify(e.message);
+    }
+  }
+  async function exportSession() {
+    try {
+      download(
+        (session?.title || 'investigation') + '.json',
+        await api('/sessions/' + sessionId + '/export'),
+      );
+    } catch (e) {
+      notify(e.message);
+    }
+  }
+  async function review(run, allow) {
+    try {
+      await api('/runs/' + run.id + '/review', { method: 'POST', body: { allow } });
+    } catch (e) {
+      notify(e.message);
+    }
+  }
+  const openResult = (run) => setModal({ type: 'result', run });
+  const navigation = [
+    { id: 'investigate', label: 'Investigations', icon: MessageSquare },
+    { id: 'tools', label: 'Tool library', icon: Box, count: tools.length || null },
+    {
+      id: 'evidence',
+      label: 'Evidence',
+      icon: Fingerprint,
+      count: runs.filter((r) => r.status === 'completed').length || null,
+    },
+    { id: 'connections', label: 'Connections', icon: Cable },
+  ];
+  return (
+    <div className={'app-shell ' + (!left ? 'left-hidden ' : '') + (!right ? 'right-hidden' : '')}>
+      {left && (
+        <aside className="sidebar">
+          <div className="brand">
+            <Logo />
+            <span>
+              rea<span className="brand-sub">workbench</span>
+            </span>
+            <IconButton
+              icon={PanelLeftClose}
+              label="Collapse sidebar"
+              onClick={() => setLeft(false)}
+            />
+          </div>
+          <button className="new-investigation" onClick={newInvestigation}>
+            <Plus size={17} />
+            New investigation<span>⌘ ⇧ O</span>
+          </button>
+          <nav>
+            {navigation.map((n) => (
+              <button
+                key={n.id}
+                className={'nav-item ' + (view === n.id ? 'active' : '')}
+                onClick={() => setView(n.id)}
+              >
+                <n.icon size={17} />
+                {n.label}
+                {n.count && <span className="nav-count">{n.count}</span>}
+              </button>
+            ))}
+          </nav>
+          <div className="sidebar-divider" />
+          <div className="sidebar-section">
+            <span>YOUR WORKSPACE</span>
+            <IconButton
+              icon={Search}
+              label="Search investigations and tools"
+              onClick={() => setModal({ type: 'command' })}
+            />
+          </div>
+          <div className="session-list">
+            {sessions
+              .filter((s) => !s.archived)
+              .map((s) => (
+                <button
+                  key={s.id}
+                  className={'session-item ' + (sessionId === s.id ? 'selected' : '')}
+                  onClick={() => {
+                    setSessionId(s.id);
+                    setView('investigate');
+                  }}
+                >
+                  <Folder size={15} />
+                  <span>{s.title}</span>
+                  {s.messages.some((m) => m.status === 'running') && (
+                    <span className="running-dot" />
+                  )}
+                </button>
+              ))}
+            {!sessions.some((s) => !s.archived) && (
+              <div className="empty-sidebar">
+                Your investigations live here.
+                <br />
+                Start with a question or a target.
+              </div>
+            )}
+          </div>
+          <button className="sample-link" onClick={demo}>
+            <FileCode2 size={17} />
+            <div>
+              Explore a sample<span>No setup needed</span>
+            </div>
+            <ArrowUpRight size={15} />
+          </button>
+          <div className="sidebar-bottom">
+            <button onClick={() => setModal({ type: 'help' })}>
+              <BookOpen size={16} />
+              Quick start
+              <ArrowUpRight size={13} />
+            </button>
+            <button onClick={() => setView('connections')}>
+              <span className={'connection-dot ' + (connected ? 'online' : '')} />
+              <span>
+                Local workspace
+                <small>{connected ? 'Connected to your machine' : 'Reconnecting…'}</small>
+              </span>
+              <Settings2 size={17} />
+            </button>
+          </div>
+        </aside>
+      )}
+      <main className="main">
+        <header className="topbar">
+          <div>
+            {!left && (
+              <IconButton
+                icon={PanelLeftOpen}
+                label="Expand sidebar"
+                onClick={() => setLeft(true)}
+              />
+            )}
+            <FolderOpen size={17} />
+            <span className="breadcrumb">Workspace</span>
+            <ChevronRight size={13} />
+            <button className="page-title" onClick={() => session && setModal({ type: 'rename' })}>
+              {view === 'investigate'
+                ? session?.title || 'New investigation'
+                : navigation.find((n) => n.id === view)?.label}
+            </button>
+          </div>
+          <div>
+            <span className="local-badge">
+              <span />
+              LOCAL
+            </span>
+            {session && (
+              <IconButton icon={Download} label="Export investigation" onClick={exportSession} />
+            )}
+            <IconButton
+              icon={right ? PanelRightClose : PanelRightOpen}
+              label={right ? 'Hide inspector' : 'Show inspector'}
+              onClick={() => setRight(!right)}
+            />
+          </div>
+        </header>
+        <nav className="mobile-nav" aria-label="Main navigation">
+          <button onClick={newInvestigation}>
+            <Plus />
+            New
+          </button>
+          {navigation.map((n) => (
+            <button
+              key={n.id}
+              className={view === n.id ? 'active' : ''}
+              onClick={() => setView(n.id)}
+            >
+              <n.icon />
+              {n.label}
+            </button>
+          ))}
+        </nav>
+        {view === 'investigate' && (
+          <>
+            <div className="conversation-scroll">
+              {!messages.length && !sessionRuns.length ? (
+                <div className="welcome">
+                  <div className="welcome-eyebrow">
+                    <span />
+                    YOUR INVESTIGATION STARTS HERE
+                  </div>
+                  <div className="welcome-logo">
+                    <Logo large />
+                  </div>
+                  <h1>
+                    Understand what’s
+                    <br />
+                    <span>under the surface.</span>
+                  </h1>
+                  <p>
+                    From an app’s behavior to its binary.
+                    <br />
+                    Bring a target. Follow the evidence.
+                  </p>
+                  <div className="starter-grid">
+                    {[
+                      {
+                        name: 'Application',
+                        description: 'Trace features & dependencies',
+                        icon: Braces,
+                        tool: 'analyze_javascript_application',
+                        className: 'sage',
+                      },
+                      {
+                        name: 'Native binary',
+                        description: 'Inspect functions & assembly',
+                        icon: Cpu,
+                        tool: 'open_binary',
+                        className: 'blue',
+                      },
+                      {
+                        name: 'Firmware',
+                        description: 'Explore devices & protocols',
+                        icon: Radio,
+                        tool: 'inspect_firmware_regions',
+                        className: 'sand',
+                      },
+                      {
+                        name: 'Network capture',
+                        description: 'Understand recorded traffic',
+                        icon: Network,
+                        tool: 'inspect_packet_capture',
+                        className: 'lilac',
+                      },
+                    ].map((c) => (
+                      <button
+                        className="starter-card"
+                        key={c.name}
+                        onClick={() => toolDialog(c.tool)}
+                      >
+                        <span className={'starter-icon ' + c.className}>
+                          <c.icon size={21} />
+                        </span>
+                        <ArrowUpRight className="starter-arrow" size={15} />
+                        <strong>{c.name}</strong>
+                        <small>{c.description}</small>
+                      </button>
+                    ))}
+                  </div>
+                  <button className="demo-link" onClick={demo}>
+                    <Play size={12} />
+                    Just looking around? Try the Electron sample
+                    <ArrowRight size={13} />
+                  </button>
+                </div>
+              ) : (
+                <div className="conversation">
+                  <div className="conversation-heading">
+                    <span className="label">INVESTIGATION</span>
+                    <h2>{session?.title}</h2>
+                    {target && (
+                      <span className="target-caption">
+                        <FileBox size={14} />
+                        {target}
+                      </span>
+                    )}
+                  </div>
+                  {messages.map((m) => (
+                    <div key={m.id} className={'message ' + m.role}>
+                      <div className="message-heading">
+                        {m.role === 'assistant' ? (
+                          <ProviderMark provider={m.provider} />
+                        ) : (
+                          <span className="user-avatar">Y</span>
+                        )}
+                        <strong>
+                          {m.role === 'assistant'
+                            ? m.provider === 'claude'
+                              ? 'Claude'
+                              : 'Codex'
+                            : 'You'}
+                        </strong>
+                        <span>{shortTime(m.createdAt)}</span>
+                        {m.status === 'running' && <Loader2 size={13} className="spin" />}
+                      </div>
+                      {m.text ? (
+                        <div className="markdown">
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            components={{
+                              a: (props) => <a {...props} target="_blank" rel="noreferrer" />,
+                            }}
+                          >
+                            {m.text}
+                          </ReactMarkdown>
+                        </div>
+                      ) : (
+                        <div className="thinking">
+                          <span />
+                          <span />
+                          <span />
+                          <small>{m.activity?.at(-1) || 'Connecting to your agent…'}</small>
+                        </div>
+                      )}
+                      {m.activity?.length > 0 && (
+                        <details className="agent-activity">
+                          <summary>
+                            <Activity size={12} />
+                            {m.activity.length} activity updates
+                          </summary>
+                          {m.activity.map((a, i) => (
+                            <div key={i}>{a}</div>
+                          ))}
+                        </details>
+                      )}
+                      {['failed', 'cancelled', 'interrupted'].includes(m.status) && (
+                        <Status status={m.status} />
+                      )}
+                      <div className="message-actions">
+                        {m.text && (
+                          <IconButton
+                            icon={Copy}
+                            label="Copy message"
+                            onClick={() =>
+                              navigator.clipboard.writeText(m.text).then(() => notify('Copied'))
+                            }
+                          />
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  {sessionRuns.length > 0 && (
+                    <div className="run-section">
+                      <div className="section-title">
+                        <Workflow size={15} />
+                        Analysis activity<span>{sessionRuns.length}</span>
+                      </div>
+                      {[...sessionRuns].reverse().map((run) => (
+                        <RunCard
+                          key={run.id}
+                          run={run}
+                          onOpen={() => openResult(run)}
+                          onCancel={() =>
+                            api('/runs/' + run.id + '/cancel', { method: 'POST' }).catch((e) =>
+                              notify(e.message),
+                            )
+                          }
+                          onReview={(allow) => review(run, allow)}
+                        />
+                      ))}
+                    </div>
+                  )}
+                  <div ref={endRef} />
+                </div>
+              )}
+            </div>
+            <div className="composer-wrap">
+              {pending.length > 0 && (
+                <div className="approval-banner">
+                  <ShieldAlert size={16} />
+                  {pending.length} action{pending.length === 1 ? '' : 's'} waiting for your review
+                  <button onClick={() => setModal({ type: 'review', run: pending[0] })}>
+                    Review action
+                    <ArrowRight size={14} />
+                  </button>
+                </div>
+              )}
+              <form
+                className="composer"
+                onSubmit={send}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  upload(e.dataTransfer.files[0]);
+                }}
+              >
+                {target && (
+                  <div className="target-chip">
+                    <FileBox size={13} />
+                    <span title={target}>{fileName(target)}</span>
+                    <button
+                      type="button"
+                      aria-label="Remove target"
+                      onClick={() => chooseTarget('')}
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                )}
+                <textarea
+                  aria-label="Message your investigation agent"
+                  placeholder={
+                    target
+                      ? 'What would you like to understand about ' + fileName(target) + '?'
+                      : 'Ask about an app, binary, or protocol…'
+                  }
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+                      e.preventDefault();
+                      send();
+                    }
+                  }}
+                />
+                <div className="composer-toolbar">
+                  <div>
+                    <IconButton
+                      icon={Plus}
+                      label="Attach local target"
+                      onClick={() => setModal({ type: 'files' })}
+                    />
+                    <button
+                      type="button"
+                      className="attach-label"
+                      onClick={() => setModal({ type: 'files' })}
+                    >
+                      {target ? 'Change target' : 'Attach a target'}
+                    </button>
+                    <span className="toolbar-separator" />
+                    <button
+                      type="button"
+                      className="agent-picker"
+                      onClick={() => setModal({ type: 'provider' })}
+                    >
+                      <ProviderMark provider={provider} />
+                      {provider === 'claude' ? 'Claude' : 'Codex'}
+                      <ChevronDown size={13} />
+                    </button>
+                    <span className="model-label">{model || 'Default model'}</span>
+                  </div>
+                  <div>
+                    <span className="mode-chip">
+                      <ShieldCheck size={12} />
+                      Review actions
+                    </span>
+                    {running ? (
+                      <button
+                        className="send-button stop"
+                        type="button"
+                        aria-label="Stop agent"
+                        onClick={() =>
+                          api('/sessions/' + sessionId + '/stop', { method: 'POST' }).catch((e) =>
+                            notify(e.message),
+                          )
+                        }
+                      >
+                        <Square size={15} />
+                      </button>
+                    ) : (
+                      <button
+                        className="send-button"
+                        type="submit"
+                        aria-label="Send message"
+                        disabled={!prompt.trim() || submitting || !connected}
+                      >
+                        {submitting ? (
+                          <Loader2 size={18} className="spin" />
+                        ) : (
+                          <ArrowUp size={19} />
+                        )}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </form>
+              <div className="composer-caption">
+                <span>
+                  <span className="tiny-dot" />
+                  Analysis runs locally. Agent messages use your selected provider.
+                </span>
+                <span>
+                  ↵ send <span>·</span> ⇧ ↵ new line
+                </span>
+              </div>
+            </div>
+          </>
+        )}
+        {view === 'tools' && (
+          <ToolLibrary
+            tools={tools}
+            availability={availability}
+            onSelect={(tool) => setModal({ type: 'tool', tool })}
+          />
+        )}
+        {view === 'evidence' && (
+          <EvidenceLibrary
+            runs={runs}
+            sessions={sessions}
+            onOpen={openResult}
+            onSelectSession={(id) => {
+              setSessionId(id);
+              setView('investigate');
+            }}
+          />
+        )}
+        {view === 'connections' && (
+          <Connections
+            providers={providers}
+            engine={engine}
+            tools={tools}
+            boot={boot}
+            onRefresh={async () => {
+              try {
+                setProviders(await api('/providers'));
+                await loadStatus(sessionId);
+                notify('Connection status refreshed');
+              } catch (e) {
+                notify(e.message);
+              }
+            }}
+          />
+        )}
+      </main>
+      {right && (
+        <aside className="inspector">
+          <div className="inspector-header">
+            <SlidersHorizontal size={15} />
+            <strong>Investigation</strong>
+            <span className="subtle-badge">{session ? 'Active' : 'New'}</span>
+          </div>
+          <div className="inspector-body">
+            <div className="section-label">
+              TARGET
+              <IconButton
+                icon={Plus}
+                label="Select a target"
+                onClick={() => setModal({ type: 'files' })}
+              />
+            </div>
+            <button
+              className={'target-drop ' + (target ? 'has-target' : '')}
+              onClick={() => setModal({ type: 'files' })}
+            >
+              <span>
+                <FileBox size={24} />
+              </span>
+              <strong>{target ? fileName(target) : 'Add your first target'}</strong>
+              <p>{target ? target : 'An application, binary, firmware,\nor a recorded capture.'}</p>
+              <small>
+                {target ? 'Click to change target' : 'Browse local files'}
+                <ArrowRight size={12} />
+              </small>
+            </button>
+            {target && (
+              <button
+                className="inspect-target"
+                onClick={() =>
+                  toolDialog(
+                    /\.asar$/.test(target) ? 'analyze_javascript_application' : 'inspect_artifact',
+                  )
+                }
+              >
+                <ScanLine size={14} />
+                Inspect target
+                <ArrowUpRight size={13} />
+              </button>
+            )}
+            <div className="inspector-divider" />
+            <div className="section-label">
+              WORKSPACE
+              <IconButton
+                icon={RefreshCw}
+                label="Refresh engine status"
+                onClick={() => loadStatus(sessionId)}
+              />
+            </div>
+            <div className="workspace-line">
+              <span className="service-icon">
+                <Terminal size={16} />
+              </span>
+              <div>
+                REA engine
+                <small>
+                  {tools.length ? `${tools.length} tools discovered` : 'Discovering tools…'}
+                </small>
+              </div>
+              <span className={'connection-dot ' + (tools.length ? 'online' : '')} />
+            </div>
+            {providers.map((p) => (
+              <button
+                key={p.id}
+                className="workspace-line agent-line"
+                onClick={() => setView('connections')}
+              >
+                <span className="service-icon">
+                  <ProviderMark provider={p.id} />
+                </span>
+                <div>
+                  {p.id === 'codex' ? 'ChatGPT Codex' : 'Claude Code'}
+                  <small>
+                    {p.loggedIn ? 'Signed in' : p.installed ? 'Sign-in required' : 'Not installed'}
+                  </small>
+                </div>
+                <span className={'connection-dot ' + (p.loggedIn ? 'online' : '')} />
+              </button>
+            ))}
+            <div className="inspector-divider" />
+            <div className="section-label">
+              EVIDENCE<span>{sessionRuns.filter((r) => r.status === 'completed').length}</span>
+            </div>
+            {sessionRuns.length ? (
+              <div className="mini-runs">
+                {sessionRuns.slice(0, 5).map((r) => (
+                  <button key={r.id} onClick={() => openResult(r)}>
+                    <FileJson size={14} />
+                    <span>
+                      {title(r.tool)}
+                      <small>{r.summary?.evidenceId?.slice(0, 16) || r.status}</small>
+                    </span>
+                    <ChevronRight size={13} />
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="empty-evidence">
+                <Fingerprint size={24} />
+                <p>
+                  Findings will appear here.
+                  <br />
+                  Every result keeps its source.
+                </p>
+              </div>
+            )}
+            <div className="inspector-divider" />
+            <div className="section-label">CAPABILITIES</div>
+            <div className="capability-tags">
+              <span>Static analysis</span>
+              <span>Feature tracing</span>
+              <span>Evidence graphs</span>
+              <span>Runtime tools</span>
+            </div>
+            <button className="all-tools-link" onClick={() => setView('tools')}>
+              Explore all tools
+              <ArrowRight size={13} />
+            </button>
+          </div>
+          <div className="inspector-footer">
+            <ShieldCheck size={15} />
+            <p>
+              Artifacts are stored locally.
+              <br />
+              <span>Tool output may be sent to your agent.</span>
+            </p>
+          </div>
+        </aside>
+      )}
+      <input type="file" hidden ref={fileInput} onChange={(e) => upload(e.target.files[0])} />
+      {toast && (
+        <div className="toast" role="status">
+          <CircleHelp size={16} />
+          {toast}
+          <IconButton icon={X} label="Dismiss notification" onClick={() => setToast('')} />
+        </div>
+      )}
+      {!boot && (
+        <div className="loading-overlay">
+          <Logo />
+          <Loader2 className="spin" size={18} />
+          <p>Connecting to REA Workbench…</p>
+          {toast && <button onClick={() => location.reload()}>Retry connection</button>}
+        </div>
+      )}
+      {modal?.type === 'tool' && (
+        <ToolDialog
+          tool={modal.tool}
+          target={target}
+          seed={modal.seed}
+          availability={availability[modal.tool.name]}
+          onClose={() => setModal(null)}
+          onRun={runTool}
+          onBrowse={() => setModal({ type: 'files' })}
+        />
+      )}
+      {modal?.type === 'files' && (
+        <FilePicker
+          initialPath={
+            target
+              ? target.includes('.')
+                ? target.slice(0, target.lastIndexOf('/'))
+                : target
+              : boot?.defaultPath
+          }
+          onClose={() => setModal(null)}
+          onSelect={chooseTarget}
+          onUpload={() => fileInput.current.click()}
+        />
+      )}
+      {modal?.type === 'result' && (
+        <ResultViewer run={modal.run} onClose={() => setModal(null)} notify={notify} />
+      )}
+      {modal?.type === 'provider' && (
+        <ProviderDialog
+          providers={providers}
+          provider={provider}
+          model={model}
+          onClose={() => setModal(null)}
+          onSave={(p, m) => {
+            setProvider(p);
+            setModel(m);
+            if (session) patchSession({ provider: p, model: m }).catch((e) => notify(e.message));
+            setModal(null);
+          }}
+        />
+      )}
+      {modal?.type === 'command' && (
+        <CommandPalette
+          tools={tools}
+          sessions={sessions}
+          onClose={() => setModal(null)}
+          onTool={(tool) => setModal({ type: 'tool', tool })}
+          onSession={(id) => {
+            setSessionId(id);
+            setView('investigate');
+            setModal(null);
+          }}
+        />
+      )}
+      {modal?.type === 'rename' && (
+        <RenameDialog
+          session={session}
+          onClose={() => setModal(null)}
+          onSave={async (values) => {
+            try {
+              await patchSession(values);
+              setModal(null);
+              if (values.archived) newInvestigation();
+            } catch (e) {
+              notify(e.message);
+            }
+          }}
+        />
+      )}
+      {modal?.type === 'review' && (
+        <Modal
+          title="Review agent action"
+          subtitle={title(modal.run.tool)}
+          onClose={() => setModal(null)}
+        >
+          <div className="modal-content">
+            <p>
+              The agent requested this operation. Review the selected target and arguments before
+              allowing it.
+            </p>
+            <pre className="json-block">{pretty(modal.run.args)}</pre>
+          </div>
+          <div className="modal-footer">
+            <button
+              className="secondary"
+              onClick={() => {
+                review(modal.run, false);
+                setModal(null);
+              }}
+            >
+              Decline
+            </button>
+            <button
+              className="primary"
+              onClick={() => {
+                review(modal.run, true);
+                setModal(null);
+              }}
+            >
+              Allow this action
+            </button>
+          </div>
+        </Modal>
+      )}
+      {modal?.type === 'help' && (
+        <Modal
+          title="A workspace for understanding software"
+          subtitle="Start small. Follow one question through the evidence."
+          onClose={() => setModal(null)}
+        >
+          <div className="modal-content help-content">
+            <div>
+              <span>01</span>
+              <h3>Choose a target</h3>
+              <p>
+                Browse to a local app, archive, binary, or recording. Selecting a directory
+                preserves its supporting files.
+              </p>
+            </div>
+            <div>
+              <span>02</span>
+              <h3>Ask or inspect</h3>
+              <p>
+                Chat with your signed-in Codex or Claude, or run any REA tool from the library. A
+                model override is optional.
+              </p>
+            </div>
+            <div>
+              <span>03</span>
+              <h3>Follow the evidence</h3>
+              <p>
+                Open a result to inspect findings, source relationships, or the complete JSON.
+                Export an investigation to keep its conversation and records together.
+              </p>
+            </div>
+            <div className="notice">
+              External engines have their own prerequisites. Check Connections for actual
+              availability. Live engine sessions reset when the server restarts; saved results
+              remain.
+            </div>
+          </div>
+          <div className="modal-footer">
+            <button
+              className="primary"
+              onClick={() => {
+                setModal(null);
+                demo();
+              }}
+            >
+              Try the bundled sample
+              <ArrowRight size={15} />
+            </button>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
 }
 
-function RunCard({run,onOpen,onCancel,onReview}){return <div className={'run-card '+run.status}><div className="run-card-top"><span className="run-icon"><Terminal size={16}/></span><button className="run-name" onClick={onOpen}>{title(run.tool)}<small>{run.source==='agent'?'Agent tool call':'Manual analysis'} · {shortTime(run.startedAt)}</small></button><Status status={run.status}/>{activeStatuses.includes(run.status)?<IconButton icon={Square} label="Cancel analysis" onClick={onCancel}/>:<IconButton icon={ArrowUpRight} label="Open analysis result" onClick={onOpen}/>}</div>{run.status==='running'&&<div className="run-progress"><span className="progress-line"/>{run.progress.at(-1)?.message||'REA is processing the selected input…'}</div>}{run.status==='completed'&&<div className="run-facts">{run.summary?.statistics&&<span>{run.summary.statistics.relevant_files} files inspected</span>}{run.summary?.graph&&<span>{run.summary.graph.nodes} nodes · {run.summary.graph.edges} relationships</span>}{run.summary?.evidenceId&&<code>{run.summary.evidenceId.slice(0,18)}…</code>}<button onClick={onOpen}>View evidence<ArrowRight size={13}/></button></div>}{run.error&&<p className="run-error">{run.error.slice(0,600)}</p>}{run.status==='awaiting_approval'&&<div className="inline-review"><p>Review the requested operation before it runs.</p><pre>{pretty(run.args)}</pre><div><button className="secondary" onClick={()=>onReview(false)}>Decline</button><button className="primary" onClick={()=>onReview(true)}>Allow this action</button></div></div>}</div>}
-
-function ToolLibrary({tools,availability,onSelect}){
-  const [query,setQuery]=useState(''),[group,setGroup]=useState('All tools'),[availableOnly,setAvailableOnly]=useState(false);
-  const groups=['All tools',...Object.keys(icons)];const visible=tools.filter(t=>(group==='All tools'||category(t)===group)&&(!availableOnly||availability[t.name]?.available===true)&&`${t.name} ${t.description}`.toLowerCase().includes(query.toLowerCase()));
-  return <div className="page-scroll"><div className="page-heading"><span className="label">THE COMPLETE TOOLSET</span><h1>Every tool. One workspace.</h1><p>Live schemas from your REA engine. Explore, configure, and run.</p></div><div className="library-toolbar"><label className="search-input"><Search size={17}/><input placeholder="Search tools, formats, or capabilities…" value={query} onChange={e=>setQuery(e.target.value)}/><kbd>⌘ K</kbd></label><button className={'filter-button '+(availableOnly?'selected':'')} onClick={()=>setAvailableOnly(!availableOnly)}><Filter size={15}/>Available now</button></div><div className="category-tabs">{groups.map(g=><button className={g===group?'active':''} onClick={()=>setGroup(g)} key={g}>{g}</button>)}</div><div className="results-count">{visible.length} tools<span>{group}</span></div><div className="tool-list">{visible.map(t=>{const Icon=icons[category(t)],a=availability[t.name];return <button className="tool-row" key={t.name} onClick={()=>onSelect(t)}><span className="tool-icon"><Icon size={19}/></span><div><h3>{t.title||title(t.name)}</h3><p>{t.description}</p><code>{t.name}</code></div><span className={'availability '+(a?.available?'available':'')}><span/>{a?.available?'Available':a?.reason==='target_required'?'Needs target':a?'Needs setup':'Check status'}</span><ChevronRight size={16}/></button>})}{!visible.length&&<Empty icon={Search} title="No matching tools" text="Try a different search or turn off the availability filter."/>}</div></div>
+function RunCard({ run, onOpen, onCancel, onReview }) {
+  return (
+    <div className={'run-card ' + run.status}>
+      <div className="run-card-top">
+        <span className="run-icon">
+          <Terminal size={16} />
+        </span>
+        <button className="run-name" onClick={onOpen}>
+          {title(run.tool)}
+          <small>
+            {run.source === 'agent' ? 'Agent tool call' : 'Manual analysis'} ·{' '}
+            {shortTime(run.startedAt)}
+          </small>
+        </button>
+        <Status status={run.status} />
+        {activeStatuses.includes(run.status) ? (
+          <IconButton icon={Square} label="Cancel analysis" onClick={onCancel} />
+        ) : (
+          <IconButton icon={ArrowUpRight} label="Open analysis result" onClick={onOpen} />
+        )}
+      </div>
+      {run.status === 'running' && (
+        <div className="run-progress">
+          <span className="progress-line" />
+          {run.progress.at(-1)?.message || 'REA is processing the selected input…'}
+        </div>
+      )}
+      {run.status === 'completed' && (
+        <div className="run-facts">
+          {run.summary?.statistics && (
+            <span>{run.summary.statistics.relevant_files} files inspected</span>
+          )}
+          {run.summary?.graph && (
+            <span>
+              {run.summary.graph.nodes} nodes · {run.summary.graph.edges} relationships
+            </span>
+          )}
+          {run.summary?.evidenceId && <code>{run.summary.evidenceId.slice(0, 18)}…</code>}
+          <button onClick={onOpen}>
+            View evidence
+            <ArrowRight size={13} />
+          </button>
+        </div>
+      )}
+      {run.error && <p className="run-error">{run.error.slice(0, 600)}</p>}
+      {run.status === 'awaiting_approval' && (
+        <div className="inline-review">
+          <p>Review the requested operation before it runs.</p>
+          <pre>{pretty(run.args)}</pre>
+          <div>
+            <button className="secondary" onClick={() => onReview(false)}>
+              Decline
+            </button>
+            <button className="primary" onClick={() => onReview(true)}>
+              Allow this action
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
-function ToolDialog({tool,target,seed,availability,onClose,onRun}){
-  const initial=seed||initialArgs(tool,target);const [mode,setMode]=useState('form'),[values,setValues]=useState(()=>Object.fromEntries(Object.entries(initial).map(([k,v])=>[k,typeof v==='object'?pretty(v):String(v)]))),[raw,setRaw]=useState(pretty(initial)),[issue,setIssue]=useState(''),[reviewing,setReviewing]=useState(false),[args,setArgs]=useState(null),[busy,setBusy]=useState(false);
-  const root=tool.inputSchema,properties=Object.entries(root.properties||{}),required=root.required||[];
-  function parse(){if(mode==='json'){const value=JSON.parse(raw);if(!value||typeof value!=='object'||Array.isArray(value))throw Error('Arguments must be a JSON object');return value;}const result={};for(const [name,v]of Object.entries(values)){if(v==='')continue;const p=resolveSchema(root.properties[name],root);result[name]=['integer','number'].includes(p.type)?Number(v):p.type==='boolean'?v==='true':(['object','array'].includes(p.type)||p.anyOf?.some(x=>['object','array'].includes(x.type)))?JSON.parse(v):v;if(['integer','number'].includes(p.type)&&!Number.isFinite(result[name]))throw Error(name+' must be a number');}for(const name of required)if(result[name]===undefined)throw Error(name+' is required');return result;}
-  function switchMode(next){try{const parsed=parse();if(next==='json')setRaw(pretty(parsed));else setValues(Object.fromEntries(Object.entries(parsed).map(([k,v])=>[k,typeof v==='object'?pretty(v):String(v)])));setMode(next);setIssue('');}catch(e){setIssue(e.message);}}
-  async function submit(){try{const data=parse();setIssue('');setArgs(data);if(tool.requiresReview&&!reviewing){setReviewing(true);return;}setBusy(true);await onRun(tool,data,tool.requiresReview);setBusy(false);}catch(e){setBusy(false);setIssue(e.message);}}
-  return <Modal title={reviewing?'Review operation':tool.title||title(tool.name)} subtitle={tool.name} onClose={onClose} wide><div className="modal-content"><p className="tool-description">{tool.description}</p>{availability&&!availability.available&&<div className="notice warning"><AlertCircle size={16}/><span>{availability.remediation||availability.reason}</span></div>}{reviewing?<><div className="notice warning"><ShieldAlert size={17}/><span>This operation may execute code, write files, change a target, or alter an active session. Confirm the exact arguments below.</span></div><pre className="json-block">{pretty(args)}</pre></>:<><div className="segmented"><button className={mode==='form'?'active':''} onClick={()=>switchMode('form')}>Parameters</button><button className={mode==='json'?'active':''} onClick={()=>switchMode('json')}>JSON input</button></div>{mode==='json'?<textarea aria-label="Tool arguments JSON" className="json-editor" value={raw} onChange={e=>setRaw(e.target.value)} spellCheck={false}/>:<div className="schema-form">{properties.map(([name,rawSchema])=>{const p=resolveSchema(rawSchema,root),value=values[name]??'',complex=['array','object'].includes(p.type)||p.anyOf?.some(s=>['array','object'].includes(s.type));return <label key={name}><span>{name}{required.includes(name)&&<b> *</b>}<small>{p.type||'JSON'}</small></span>{p.enum?<select value={value} onChange={e=>setValues({...values,[name]:e.target.value})}><option value="">Use default</option>{p.enum.map(v=><option key={String(v)} value={String(v)}>{String(v)}</option>)}</select>:p.type==='boolean'?<select value={value} onChange={e=>setValues({...values,[name]:e.target.value})}><option value="">Use default</option><option value="true">true</option><option value="false">false</option></select>:complex?<textarea value={value} onChange={e=>setValues({...values,[name]:e.target.value})} placeholder={p.type==='array'?'[ ]':'{ }'} spellCheck={false}/>:<input type={['number','integer'].includes(p.type)?'number':'text'} value={value} onChange={e=>setValues({...values,[name]:e.target.value})} placeholder={p.default!==undefined?String(p.default):['path','input_path'].includes(name)?'/absolute/path/to/target':''} min={p.minimum} max={p.maximum}/ >}{p.description&&<p>{p.description}</p>}</label>})}{!properties.length&&<div className="notice">This operation takes no parameters.</div>}</div>}<details className="schema-details"><summary>View full input schema</summary><pre>{pretty(root)}</pre></details></>}{issue&&<div className="notice warning">{issue}</div>}</div><div className="modal-footer"><span className="footnote"><ShieldCheck size={13}/>{tool.requiresReview?'Explicit review required':'Source-bound analysis'}</span><button className="secondary" onClick={reviewing?()=>setReviewing(false):onClose}>{reviewing?'Back':'Cancel'}</button><button className="primary" disabled={busy} onClick={submit}>{busy?<Loader2 size={15} className="spin"/>:<Play size={14}/ >}{reviewing?'Confirm & run':'Run tool'}</button></div></Modal>
+function ToolLibrary({ tools, availability, onSelect }) {
+  const [query, setQuery] = useState(''),
+    [group, setGroup] = useState('All tools'),
+    [availableOnly, setAvailableOnly] = useState(false);
+  const groups = ['All tools', ...Object.keys(icons)];
+  const visible = tools.filter(
+    (t) =>
+      (group === 'All tools' || category(t) === group) &&
+      (!availableOnly || availability[t.name]?.available === true) &&
+      `${t.name} ${t.description}`.toLowerCase().includes(query.toLowerCase()),
+  );
+  return (
+    <div className="page-scroll">
+      <div className="page-heading">
+        <span className="label">THE COMPLETE TOOLSET</span>
+        <h1>Every tool. One workspace.</h1>
+        <p>Live schemas from your REA engine. Explore, configure, and run.</p>
+      </div>
+      <div className="library-toolbar">
+        <label className="search-input">
+          <Search size={17} />
+          <input
+            placeholder="Search tools, formats, or capabilities…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+          <kbd>⌘ K</kbd>
+        </label>
+        <button
+          className={'filter-button ' + (availableOnly ? 'selected' : '')}
+          onClick={() => setAvailableOnly(!availableOnly)}
+        >
+          <Filter size={15} />
+          Available now
+        </button>
+      </div>
+      <div className="category-tabs">
+        {groups.map((g) => (
+          <button className={g === group ? 'active' : ''} onClick={() => setGroup(g)} key={g}>
+            {g}
+          </button>
+        ))}
+      </div>
+      <div className="results-count">
+        {visible.length} tools<span>{group}</span>
+      </div>
+      <div className="tool-list">
+        {visible.map((t) => {
+          const Icon = icons[category(t)],
+            a = availability[t.name];
+          return (
+            <button className="tool-row" key={t.name} onClick={() => onSelect(t)}>
+              <span className="tool-icon">
+                <Icon size={19} />
+              </span>
+              <div>
+                <h3>{t.title || title(t.name)}</h3>
+                <p>{t.description}</p>
+                <code>{t.name}</code>
+              </div>
+              <span className={'availability ' + (a?.available ? 'available' : '')}>
+                <span />
+                {a?.available
+                  ? 'Available'
+                  : a?.reason === 'target_required'
+                    ? 'Needs target'
+                    : a
+                      ? 'Needs setup'
+                      : 'Check status'}
+              </span>
+              <ChevronRight size={16} />
+            </button>
+          );
+        })}
+        {!visible.length && (
+          <Empty
+            icon={Search}
+            title="No matching tools"
+            text="Try a different search or turn off the availability filter."
+          />
+        )}
+      </div>
+    </div>
+  );
 }
 
-function FilePicker({initialPath,onClose,onSelect,onUpload}){
-  const [path,setPath]=useState(initialPath||''),[listing,setListing]=useState(null),[selected,setSelected]=useState(''),[error,setError]=useState(''),[loading,setLoading]=useState(false),[query,setQuery]=useState('');
-  async function browse(next){setLoading(true);setError('');try{const data=await api('/files?path='+encodeURIComponent(next));setListing(data);setPath(data.path);setSelected('');setQuery('');}catch(e){setError(e.message);}finally{setLoading(false);}}
-  useEffect(()=>{browse(path);},[]);
-  return <Modal title="Select a local target" subtitle="Choose a file or a directory on this machine." onClose={onClose} wide><div className="modal-content"><form className="path-bar" onSubmit={e=>{e.preventDefault();browse(path);}}><IconButton icon={ArrowUp} label="Parent directory" disabled={!listing} onClick={()=>browse(listing.parent)}/><input aria-label="Local filesystem path" value={path} onChange={e=>setPath(e.target.value)}/><button type="submit" className="secondary">Go</button></form><label className="search-input file-search"><Search size={15}/><input placeholder="Filter this folder…" value={query} onChange={e=>setQuery(e.target.value)}/></label>{error&&<div className="notice warning">{error}<button onClick={()=>onSelect(path)}>Use this exact path</button></div>}<div className="file-list">{loading?<Empty icon={Loader2} title="Reading directory…"/>:listing?.entries.filter(e=>e.name.toLowerCase().includes(query.toLowerCase())).map(entry=><div key={entry.path} className={'file-entry '+(selected===entry.path?'selected':'')}><button onClick={()=>setSelected(entry.path)} onDoubleClick={()=>entry.directory?browse(entry.path):onSelect(entry.path)}>{entry.directory?<Folder size={18}/>:<File size={18}/>}<span>{entry.name}</span><small>{entry.directory?'Folder':entry.symlink?'Link':'File'}</small></button>{entry.directory&&<IconButton icon={ChevronRight} label={'Open '+entry.name} onClick={()=>browse(entry.path)}/>}</div>)}{listing&&!listing.entries.length&&<Empty icon={Folder} title="This folder is empty"/>}</div>{listing?.total>500&&<p className="muted">Showing the first 500 entries. Enter a more specific path to browse further.</p>}</div><div className="modal-footer"><button className="text-button" onClick={onUpload}><Upload size={15}/>Upload a file instead</button><button className="secondary" disabled={!listing} onClick={()=>onSelect(listing.path)}>Use this folder</button><button className="primary" disabled={!selected} onClick={()=>onSelect(selected)}>Select target<ArrowRight size={14}/></button></div></Modal>
+function ToolDialog({ tool, target, seed, availability, onClose, onRun }) {
+  const initial = seed || initialArgs(tool, target);
+  const [mode, setMode] = useState('form'),
+    [values, setValues] = useState(() => toFormValues(initial)),
+    [raw, setRaw] = useState(pretty(initial)),
+    [issue, setIssue] = useState(''),
+    [reviewing, setReviewing] = useState(false),
+    [args, setArgs] = useState(null),
+    [busy, setBusy] = useState(false);
+  const root = tool.inputSchema,
+    properties = Object.entries(root.properties || {}),
+    required = root.required || [];
+  function parse(validate = true) {
+    if (mode === 'json') {
+      const value = JSON.parse(raw);
+      if (!value || typeof value !== 'object' || Array.isArray(value))
+        throw Error('Arguments must be a JSON object');
+      return value;
+    }
+    return parseFormArgs(root, values, validate);
+  }
+
+  function switchMode(next) {
+    try {
+      const parsed = parse(false);
+      if (next === 'json') setRaw(pretty(parsed));
+      else setValues(toFormValues(parsed));
+      setMode(next);
+      setIssue('');
+    } catch (e) {
+      setIssue(e.message);
+    }
+  }
+  async function submit() {
+    try {
+      const data = parse();
+      setIssue('');
+      setArgs(data);
+      if (tool.requiresReview && !reviewing) {
+        setReviewing(true);
+        return;
+      }
+      setBusy(true);
+      await onRun(tool, data, tool.requiresReview);
+      setBusy(false);
+    } catch (e) {
+      setBusy(false);
+      setIssue(e.message);
+    }
+  }
+  return (
+    <Modal
+      title={reviewing ? 'Review operation' : tool.title || title(tool.name)}
+      subtitle={tool.name}
+      onClose={onClose}
+      wide
+    >
+      <div className="modal-content">
+        <p className="tool-description">{tool.description}</p>
+        {availability && !availability.available && (
+          <div className="notice warning">
+            <AlertCircle size={16} />
+            <span>{availability.remediation || availability.reason}</span>
+          </div>
+        )}
+        {reviewing ? (
+          <>
+            <div className="notice warning">
+              <ShieldAlert size={17} />
+              <span>
+                This operation may execute code, write files, change a target, or alter an active
+                session. Confirm the exact arguments below.
+              </span>
+            </div>
+            <pre className="json-block">{pretty(args)}</pre>
+          </>
+        ) : (
+          <>
+            <div className="segmented">
+              <button
+                className={mode === 'form' ? 'active' : ''}
+                onClick={() => switchMode('form')}
+              >
+                Parameters
+              </button>
+              <button
+                className={mode === 'json' ? 'active' : ''}
+                onClick={() => switchMode('json')}
+              >
+                JSON input
+              </button>
+            </div>
+            {mode === 'json' ? (
+              <textarea
+                aria-label="Tool arguments JSON"
+                className="json-editor"
+                value={raw}
+                onChange={(e) => setRaw(e.target.value)}
+                spellCheck={false}
+              />
+            ) : (
+              <div className="schema-form">
+                {properties.map(([name, rawSchema]) => {
+                  const p = resolveSchema(rawSchema, root),
+                    value = values[name] ?? '',
+                    complex =
+                      ['array', 'object'].includes(p.type) ||
+                      p.anyOf?.some((s) => ['array', 'object'].includes(s.type));
+                  return (
+                    <label className="schema-field" key={name}>
+                      <span>
+                        {name}
+                        {required.includes(name) && <b> *</b>}
+                        <small className="field-type">{p.type || 'JSON'}</small>
+                      </span>
+                      {p.enum ? (
+                        <select
+                          value={value}
+                          onChange={(e) => setValues({ ...values, [name]: e.target.value })}
+                        >
+                          <option value="">Use default</option>
+                          {p.enum.map((v) => (
+                            <option key={String(v)} value={String(v)}>
+                              {String(v)}
+                            </option>
+                          ))}
+                        </select>
+                      ) : p.type === 'boolean' ? (
+                        <select
+                          value={value}
+                          onChange={(e) => setValues({ ...values, [name]: e.target.value })}
+                        >
+                          <option value="">Use default</option>
+                          <option value="true">true</option>
+                          <option value="false">false</option>
+                        </select>
+                      ) : complex ? (
+                        <textarea
+                          value={value}
+                          onChange={(e) => setValues({ ...values, [name]: e.target.value })}
+                          placeholder={p.type === 'array' ? '[ ]' : '{ }'}
+                          spellCheck={false}
+                        />
+                      ) : (
+                        <input
+                          type={['number', 'integer'].includes(p.type) ? 'number' : 'text'}
+                          value={value}
+                          onChange={(e) => setValues({ ...values, [name]: e.target.value })}
+                          placeholder={
+                            p.default !== undefined
+                              ? String(p.default)
+                              : ['path', 'input_path'].includes(name)
+                                ? '/absolute/path/to/target'
+                                : ''
+                          }
+                          min={p.minimum}
+                          max={p.maximum}
+                        />
+                      )}
+                      {p.description && <small>{p.description}</small>}
+                    </label>
+                  );
+                })}
+                {!properties.length && (
+                  <div className="notice">This operation takes no parameters.</div>
+                )}
+              </div>
+            )}
+            <details className="schema-details">
+              <summary>View full input schema</summary>
+              <pre>{pretty(root)}</pre>
+            </details>
+          </>
+        )}
+        {issue && <div className="notice warning">{issue}</div>}
+      </div>
+      <div className="modal-footer">
+        <span className="footnote">
+          <ShieldCheck size={13} />
+          {tool.requiresReview ? 'Explicit review required' : 'Source-bound analysis'}
+        </span>
+        <button className="secondary" onClick={reviewing ? () => setReviewing(false) : onClose}>
+          {reviewing ? 'Back' : 'Cancel'}
+        </button>
+        <button className="primary" disabled={busy} onClick={submit}>
+          {busy ? <Loader2 size={15} className="spin" /> : <Play size={14} />}
+          {reviewing ? 'Confirm & run' : 'Run tool'}
+        </button>
+      </div>
+    </Modal>
+  );
 }
 
-function EvidenceLibrary({runs,sessions,onOpen,onSelectSession}){const [query,setQuery]=useState(''),[filter,setFilter]=useState('all');const items=runs.filter(r=>(filter==='all'||r.status===filter)&&`${r.tool} ${r.summary?.evidenceId||''} ${sessions.find(s=>s.id===r.sessionId)?.title||''}`.toLowerCase().includes(query.toLowerCase()));return <div className="page-scroll"><div className="page-heading"><span className="label">REPRODUCIBLE BY DESIGN</span><h1>Follow the evidence.</h1><p>Every analysis, its source, and the limits of what it tells you.</p></div><div className="library-toolbar"><label className="search-input"><Search size={17}/><input placeholder="Search tools, evidence IDs, or investigations…" value={query} onChange={e=>setQuery(e.target.value)}/></label><select className="filter-button" value={filter} onChange={e=>setFilter(e.target.value)}><option value="all">All results</option><option value="completed">Completed</option><option value="failed">Failed</option><option value="running">Running</option></select></div><div className="evidence-list">{items.map(r=><div key={r.id} className="evidence-row"><div className="evidence-row-icon"><FileJson size={21}/></div><div><button onClick={()=>onOpen(r)}><h3>{title(r.tool)}</h3></button><button className="evidence-session" onClick={()=>onSelectSession(r.sessionId)}><Folder size={12}/>{sessions.find(s=>s.id===r.sessionId)?.title}</button><code>{r.summary?.evidenceId||r.id}</code></div><Status status={r.status}/><IconButton icon={ArrowUpRight} label="View result" onClick={()=>onOpen(r)}/></div>)}{!items.length&&<Empty icon={Fingerprint} title="A clear trail starts with one analysis" text="Run a tool or ask your agent to investigate. Its results will be saved here."/>}</div></div>}
-
-function ResultViewer({run,onClose,notify}){
-  const [result,setResult]=useState(null),[error,setError]=useState(''),[tab,setTab]=useState('overview');useEffect(()=>{api('/runs/'+run.id+'/result').then(setResult).catch(e=>setError(activeStatuses.includes(run.status)?'This analysis is still running. Open it again when it finishes.':e.message));},[run.id]);
-  const e=unpack(result),r=e?.normalized_result||e?.result||e,graph=r?.graph||r?.application_graph;const jsonText=result?pretty(result):'';
-  return <Modal title={title(run.tool)} subtitle={run.summary?.evidenceId||run.id} onClose={onClose} wide><div className="result-toolbar"><div className="segmented">{['overview','graph','json'].map(t=><button key={t} className={tab===t?'active':''} onClick={()=>setTab(t)}>{t==='graph'?<Network size={14}/>:t==='json'?<Braces size={14}/>:<Layers size={14}/ >}{title(t)}</button>)}</div><Status status={run.status}/></div><div className="modal-content result-content">{error?<div className="notice warning">{error}</div>:!result?<Empty icon={Loader2} title="Loading evidence…"/>:tab==='json'?<><pre className="json-block full-json">{jsonText.slice(0,160000)}</pre>{jsonText.length>160000&&<p className="notice">Preview limited to 160,000 characters. Download the complete result below.</p>}</>:tab==='graph'?graph?.nodes?.length?<GraphView graph={graph}/>:<Empty icon={Network} title="No application graph in this result" text="Application analysis and feature-tracing tools produce graph data. The complete result is available in the JSON tab."/>:<><div className="result-meta"><div><small>CONFIDENCE</small><strong>{e?.confidence||'Tool result'}</strong></div><div><small>PROVIDER</small><strong>{e?.provider?.name||'REA'}</strong></div><div><small>RECORDED</small><strong>{shortTime(run.finishedAt||run.startedAt)}</strong></div></div>{e?.subject&&<div className="subject-box"><FileBox size={19}/><div><strong>{e.subject.name}</strong><p>{e.subject.local_path}</p><code>SHA-256 · {e.subject.digest?.sha256}</code></div></div>}{r?.statistics&&<><h3 className="result-section-heading">Analysis at a glance</h3><div className="stat-grid">{Object.entries(r.statistics).filter(([,v])=>typeof v==='number').map(([k,v])=><div key={k}><strong>{v.toLocaleString()}</strong><span>{k.replaceAll('_',' ')}</span></div>)}</div></>}{r?.summary&&<><h3 className="result-section-heading">Findings</h3><JsonFacts value={r.summary}/></>}{graph&&<div className="graph-preview-link" onClick={()=>setTab('graph')} role="button" tabIndex={0} onKeyDown={e=>e.key==='Enter'&&setTab('graph')}><Network size={23}/><div><strong>{graph.nodes?.length||0} nodes · {graph.edges?.length||0} relationships</strong><p>Explore the application graph and inspect individual nodes.</p></div><ArrowRight size={18}/></div>}{(e?.limitations?.length||r?.limitations?.length)>0&&<><h3 className="result-section-heading"><CircleHelp size={15}/>Coverage & limitations</h3><ul className="limitations">{[...new Set([...(e.limitations||[]),...(r.limitations||[])])].map((l,i)=><li key={i}>{l}</li>)}</ul></>}{!r?.summary&&!r?.statistics&&!graph&&<><h3 className="result-section-heading">Result</h3><JsonFacts value={r}/></>}<details className="schema-details"><summary>Request parameters</summary><pre>{pretty(run.args)}</pre></details></>}</div><div className="modal-footer"><span className="footnote"><Fingerprint size={13}/>Original result preserved</span><button className="secondary" disabled={!result} onClick={()=>navigator.clipboard.writeText(jsonText).then(()=>notify('Copied complete JSON')).catch(e=>notify(e.message))}><Copy size={14}/>Copy JSON</button><button className="primary" disabled={!result} onClick={()=>download(run.tool+'-'+run.id.slice(0,8)+'.json',result)}><Download size={14}/>Download</button></div></Modal>
+function FilePicker({ initialPath, onClose, onSelect, onUpload }) {
+  const [path, setPath] = useState(initialPath || ''),
+    [listing, setListing] = useState(null),
+    [selected, setSelected] = useState(''),
+    [error, setError] = useState(''),
+    [loading, setLoading] = useState(false),
+    [query, setQuery] = useState('');
+  async function browse(next) {
+    setLoading(true);
+    setError('');
+    try {
+      const data = await api('/files?path=' + encodeURIComponent(next));
+      setListing(data);
+      setPath(data.path);
+      setSelected('');
+      setQuery('');
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+  useEffect(() => {
+    browse(path);
+  }, []);
+  return (
+    <Modal
+      title="Select a local target"
+      subtitle="Choose a file or a directory on this machine."
+      onClose={onClose}
+      wide
+    >
+      <div className="modal-content">
+        <form
+          className="path-bar"
+          onSubmit={(e) => {
+            e.preventDefault();
+            browse(path);
+          }}
+        >
+          <IconButton
+            icon={ArrowUp}
+            label="Parent directory"
+            disabled={!listing}
+            onClick={() => browse(listing.parent)}
+          />
+          <input
+            aria-label="Local filesystem path"
+            value={path}
+            onChange={(e) => setPath(e.target.value)}
+          />
+          <button type="submit" className="secondary">
+            Go
+          </button>
+        </form>
+        <label className="search-input file-search">
+          <Search size={15} />
+          <input
+            placeholder="Filter this folder…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        </label>
+        {error && (
+          <div className="notice warning">
+            {error}
+            <button onClick={() => onSelect(path)}>Use this exact path</button>
+          </div>
+        )}
+        <div className="file-list">
+          {loading ? (
+            <Empty icon={Loader2} title="Reading directory…" />
+          ) : (
+            listing?.entries
+              .filter((e) => e.name.toLowerCase().includes(query.toLowerCase()))
+              .map((entry) => (
+                <div
+                  key={entry.path}
+                  className={'file-entry ' + (selected === entry.path ? 'selected' : '')}
+                >
+                  <button
+                    onClick={() => setSelected(entry.path)}
+                    onDoubleClick={() =>
+                      entry.directory ? browse(entry.path) : onSelect(entry.path)
+                    }
+                  >
+                    {entry.directory ? <Folder size={18} /> : <File size={18} />}
+                    <span>{entry.name}</span>
+                    <small>{entry.directory ? 'Folder' : entry.symlink ? 'Link' : 'File'}</small>
+                  </button>
+                  {entry.directory && (
+                    <IconButton
+                      icon={ChevronRight}
+                      label={'Open ' + entry.name}
+                      onClick={() => browse(entry.path)}
+                    />
+                  )}
+                </div>
+              ))
+          )}
+          {listing && !listing.entries.length && (
+            <Empty icon={Folder} title="This folder is empty" />
+          )}
+        </div>
+        {listing?.total > 500 && (
+          <p className="muted">
+            Showing the first 500 entries. Enter a more specific path to browse further.
+          </p>
+        )}
+      </div>
+      <div className="modal-footer">
+        <button className="text-button" onClick={onUpload}>
+          <Upload size={15} />
+          Upload a file instead
+        </button>
+        <button className="secondary" disabled={!listing} onClick={() => onSelect(listing.path)}>
+          Use this folder
+        </button>
+        <button className="primary" disabled={!selected} onClick={() => onSelect(selected)}>
+          Select target
+          <ArrowRight size={14} />
+        </button>
+      </div>
+    </Modal>
+  );
 }
-function JsonFacts({value,depth=0}){if(value===null||value===undefined)return <span className="muted">Unknown</span>;if(typeof value!=='object')return <span className="fact-value">{String(value)}</span>;const entries=Object.entries(value);if(depth>=2)return <pre className="json-block fact-json">{pretty(value).slice(0,8000)}</pre>;return <div className="json-facts">{entries.slice(0,40).map(([k,v])=><div key={k} className={'fact '+(typeof v==='object'&&v!==null?'nested':'')}><span>{k.replaceAll('_',' ')}</span><JsonFacts value={v} depth={depth+1}/></div>)}{entries.length>40&&<p className="muted">{entries.length-40} additional entries in the JSON tab.</p>}</div>}
 
-function GraphView({graph}){
-  const [selected,setSelected]=useState(null),[zoom,setZoom]=useState(1),[pan,setPan]=useState({x:0,y:0});const drag=useRef(null);
-  const layout=useMemo(()=>{const nodes=graph.nodes.slice(0,80).map((n,i)=>({...n,x:440+Math.cos(i*2.399)*Math.sqrt(i+1)*34,y:270+Math.sin(i*2.399)*Math.sqrt(i+1)*24}));const byId=new Map(nodes.map(n=>[n.node_id||n.id,n]));const edges=(graph.edges||[]).map(e=>({...e,a:byId.get(e.source_node_id||e.source),b:byId.get(e.target_node_id||e.target)})).filter(e=>e.a&&e.b);for(let k=0;k<120;k++){for(let i=0;i<nodes.length;i++)for(let j=i+1;j<nodes.length;j++){const a=nodes[i],b=nodes[j],dx=b.x-a.x||.1,dy=b.y-a.y||.1,d=Math.max(30,Math.hypot(dx,dy)),f=150/d/d;a.x-=dx*f;a.y-=dy*f;b.x+=dx*f;b.y+=dy*f;}for(const e of edges){const dx=e.b.x-e.a.x,dy=e.b.y-e.a.y,d=Math.hypot(dx,dy)||1,f=(d-110)*.007;e.a.x+=dx/d*f;e.a.y+=dy/d*f;e.b.x-=dx/d*f;e.b.y-=dy/d*f;}for(const n of nodes){n.x+=(440-n.x)*.001;n.y+=(270-n.y)*.001;}}const xs=nodes.map(n=>n.x),ys=nodes.map(n=>n.y),minX=Math.min(...xs),minY=Math.min(...ys),scale=Math.min(740/Math.max(1,Math.max(...xs)-minX),420/Math.max(1,Math.max(...ys)-minY));for(const n of nodes){n.x=70+(n.x-minX)*scale;n.y=60+(n.y-minY)*scale;}return{nodes,edges};},[graph]);
-  const colors={'ipc-channel':'#d4b787','javascript-asset':'#91afd0','context-bridge-api':'#abc8a2','package':'#c7a8d3','javascript-expression':'#8cacae'};
-  return <div className="graph-view"><div className="graph-controls"><span>{layout.nodes.length} of {graph.nodes.length} nodes · drag to pan</span><IconButton icon={Minus} label="Zoom out" onClick={()=>setZoom(z=>Math.max(.35,z-.2))}/><IconButton icon={Plus} label="Zoom in" onClick={()=>setZoom(z=>Math.min(3,z+.2))}/><IconButton icon={Maximize2} label="Reset graph view" onClick={()=>{setZoom(1);setPan({x:0,y:0});}}/></div><svg viewBox="0 0 880 540" role="img" aria-label="Application relationship graph" onPointerDown={e=>{if(e.target.closest('[data-node]'))return;drag.current={x:e.clientX,y:e.clientY,...pan};e.currentTarget.setPointerCapture(e.pointerId);}} onPointerMove={e=>{if(drag.current){const ratio=880/e.currentTarget.getBoundingClientRect().width;setPan({x:drag.current.xPan??(drag.current.x0??0),y:0});setPan({x:drag.current.x+(e.clientX-drag.current.x)*ratio,y:drag.current.y+(e.clientY-drag.current.y)*ratio});}} onPointerUp={()=>drag.current=null} onPointerCancel={()=>drag.current=null}><defs><pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r=".7" fill="#333737"/></pattern></defs><rect width="880" height="540" fill="url(#dots)"/><g transform={`translate(${pan.x} ${pan.y}) translate(440 270) scale(${zoom}) translate(-440 -270)`}>{layout.edges.map((e,i)=><line key={i} x1={e.a.x} y1={e.a.y} x2={e.b.x} y2={e.b.y} stroke={selected&&(e.a===selected||e.b===selected)?'#a9c5a1':'#3c4545'} strokeWidth={selected&&(e.a===selected||e.b===selected)?2:1}/>)}{layout.nodes.map(n=><g key={n.node_id||n.id} data-node="true" transform={`translate(${n.x} ${n.y})`} onClick={()=>setSelected(n)} role="button" tabIndex={0} aria-label={n.observations?.[0]?.label||n.kind} onKeyDown={e=>e.key==='Enter'&&setSelected(n)}><circle r={selected===n?10:6} fill={colors[n.kind]||'#9aa3aa'} stroke="#202425" strokeWidth="3"/><text y="20" textAnchor="middle" fill={selected===n?'#edf1ee':'#a6adad'} fontSize="10">{(n.observations?.[0]?.label||n.label||n.kind||'node').slice(0,26)}</text></g>)}</g></svg>{selected?<div className="graph-node-detail"><div><strong>{selected.observations?.[0]?.label||selected.kind}</strong><span className="subtle-badge">{selected.kind}</span><IconButton icon={X} label="Clear node selection" onClick={()=>setSelected(null)}/></div><pre>{pretty(selected).slice(0,14000)}</pre></div>:<p className="graph-hint">Select a node to inspect its source, relationships, and authority. Edges show recorded relationships, not proof of runtime execution.</p>}</div>
+function EvidenceLibrary({ runs, sessions, onOpen, onSelectSession }) {
+  const [query, setQuery] = useState(''),
+    [filter, setFilter] = useState('all');
+  const items = runs.filter(
+    (r) =>
+      (filter === 'all' || r.status === filter) &&
+      `${r.tool} ${r.summary?.evidenceId || ''} ${sessions.find((s) => s.id === r.sessionId)?.title || ''}`
+        .toLowerCase()
+        .includes(query.toLowerCase()),
+  );
+  return (
+    <div className="page-scroll">
+      <div className="page-heading">
+        <span className="label">REPRODUCIBLE BY DESIGN</span>
+        <h1>Follow the evidence.</h1>
+        <p>Every analysis, its source, and the limits of what it tells you.</p>
+      </div>
+      <div className="library-toolbar">
+        <label className="search-input">
+          <Search size={17} />
+          <input
+            placeholder="Search tools, evidence IDs, or investigations…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        </label>
+        <select
+          className="filter-button"
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+        >
+          <option value="all">All results</option>
+          <option value="completed">Completed</option>
+          <option value="failed">Failed</option>
+          <option value="running">Running</option>
+        </select>
+      </div>
+      <div className="evidence-list">
+        {items.map((r) => (
+          <div key={r.id} className="evidence-row">
+            <div className="evidence-row-icon">
+              <FileJson size={21} />
+            </div>
+            <div>
+              <button onClick={() => onOpen(r)}>
+                <h3>{title(r.tool)}</h3>
+              </button>
+              <button className="evidence-session" onClick={() => onSelectSession(r.sessionId)}>
+                <Folder size={12} />
+                {sessions.find((s) => s.id === r.sessionId)?.title}
+              </button>
+              <code>{r.summary?.evidenceId || r.id}</code>
+            </div>
+            <Status status={r.status} />
+            <IconButton icon={ArrowUpRight} label="View result" onClick={() => onOpen(r)} />
+          </div>
+        ))}
+        {!items.length && (
+          <Empty
+            icon={Fingerprint}
+            title="A clear trail starts with one analysis"
+            text="Run a tool or ask your agent to investigate. Its results will be saved here."
+          />
+        )}
+      </div>
+    </div>
+  );
 }
 
-function Connections({providers,engine,tools,boot,onRefresh}){
-  const [refreshing,setRefreshing]=useState(false);const candidates=engine?.analysis_provider_candidates||[];const groups=engine?.tool_availability?.groups||[];const missing=groups.filter(g=>!g.available&&g.reason!=='target_required');
-  return <div className="page-scroll"><div className="page-heading"><span className="label">YOUR AGENTS. YOUR MACHINE.</span><div className="heading-row"><h1>Connected to your workflow.</h1><button className="secondary" disabled={refreshing} onClick={async()=>{setRefreshing(true);await onRefresh();setRefreshing(false);}}><RefreshCw size={14} className={refreshing?'spin':''}/>Refresh</button></div><p>Use your existing CLI sign-ins. Model access and usage follow each provider’s account.</p></div><div className="provider-cards">{['codex','claude'].map(id=>{const p=providers.find(x=>x.id===id);return <div className="provider-card" key={id}><div className="provider-card-top"><ProviderMark provider={id}/><span className={'availability '+(p?.loggedIn?'available':'')}><span/>{p?.loggedIn?'Connected':p?.installed?'Sign in required':'Not installed'}</span></div><h2>{id==='codex'?'ChatGPT Codex':'Claude Code'}</h2><p>{id==='codex'?'Your ChatGPT-connected Codex CLI.':'Your Claude subscription or configured CLI account.'}</p><code>{p?.version||'CLI not detected'}</code><div className="provider-card-bottom"><Check size={14}/><span>Shared REA tools & evidence</span></div>{!p?.loggedIn&&<div className="notice">Run <code>{id==='codex'?'codex login':'claude auth login'}</code> in your terminal, then refresh.</div>}</div>})}</div><h2 className="connections-heading">Analysis engines<span>{tools.length} tools registered</span></h2><div className="engine-card"><span className="service-icon"><Terminal size={19}/></span><div><strong>REA local engine</strong><p>{boot?.root}</p><small>One live MCP session per investigation. Results persist across restarts.</small></div><span className="availability available"><span/>Ready</span></div>{candidates.map(c=><div className="engine-card" key={c.provider.id}><span className="service-icon"><Cpu size={19}/></span><div><strong>{c.provider.name}</strong><p>{c.availability.reason||'Configured for native analysis'}</p><small>{c.availability.diagnostics?.install_dir||c.availability.code}</small></div><span className={'availability '+(c.availability.status==='available'?'available':'')}><span/>{c.availability.status==='available'?'Available':'Not configured'}</span></div>)}<h2 className="connections-heading">Additional capabilities</h2><div className="capability-table">{groups.map((g,i)=><details key={i}><summary><span className={'connection-dot '+(g.available?'online':'')}/><strong>{title(g.surface||g.names[0])}</strong><span>{g.names.length} tools</span><small>{g.available?'Available':g.reason==='target_required'?'Open a target':g.reason?.replaceAll('_',' ')}</small><ChevronDown size={14}/></summary><p>{g.remediation||'Available with the appropriate selected input.'}</p><div className="capability-tags">{g.names.map(n=><code key={n}>{n}</code>)}</div>{g.effects?.length>0&&<p>Effects: {g.effects.join(', ')}</p>}</details>)}</div><div className="notice"><CircleHelp size={17}/><span>Install external engines separately and pass their documented environment variables when starting Workbench. Some firmware, packet, and signal adapters require Linux. The dashboard exposes these tools but cannot make unsupported hosts compatible.</span></div><div className="connections-links"><a href="https://github.com/morluto/rea/blob/main/docs/installation.md" target="_blank" rel="noreferrer">REA engine setup<ExternalLink size={13}/></a><a href="https://code.claude.com/docs/en/headless" target="_blank" rel="noreferrer">Claude CLI integration<ExternalLink size={13}/></a><a href="https://developers.openai.com/codex/noninteractive" target="_blank" rel="noreferrer">Codex CLI integration<ExternalLink size={13}/></a></div></div>
+function ResultViewer({ run, onClose, notify }) {
+  const [result, setResult] = useState(null),
+    [error, setError] = useState(''),
+    [tab, setTab] = useState('overview');
+  useEffect(() => {
+    api('/runs/' + run.id + '/result')
+      .then(setResult)
+      .catch((e) =>
+        setError(
+          activeStatuses.includes(run.status)
+            ? 'This analysis is still running. Open it again when it finishes.'
+            : e.message,
+        ),
+      );
+  }, [run.id]);
+  const e = unpack(result),
+    r = e?.normalized_result || e?.result || e,
+    graph = r?.graph || r?.application_graph;
+  const jsonText = result ? pretty(result) : '';
+  return (
+    <Modal
+      title={title(run.tool)}
+      subtitle={run.summary?.evidenceId || run.id}
+      onClose={onClose}
+      wide
+    >
+      <div className="result-toolbar">
+        <div className="segmented">
+          {['overview', 'graph', 'json'].map((t) => (
+            <button key={t} className={tab === t ? 'active' : ''} onClick={() => setTab(t)}>
+              {t === 'graph' ? (
+                <Network size={14} />
+              ) : t === 'json' ? (
+                <Braces size={14} />
+              ) : (
+                <Layers size={14} />
+              )}
+              {title(t)}
+            </button>
+          ))}
+        </div>
+        <Status status={run.status} />
+      </div>
+      <div className="modal-content result-content">
+        {error ? (
+          <div className="notice warning">{error}</div>
+        ) : !result ? (
+          <Empty icon={Loader2} title="Loading evidence…" />
+        ) : tab === 'json' ? (
+          <>
+            <pre className="json-block full-json">{jsonText.slice(0, 160000)}</pre>
+            {jsonText.length > 160000 && (
+              <p className="notice">
+                Preview limited to 160,000 characters. Download the complete result below.
+              </p>
+            )}
+          </>
+        ) : tab === 'graph' ? (
+          graph?.nodes?.length ? (
+            <GraphView graph={graph} />
+          ) : (
+            <Empty
+              icon={Network}
+              title="No application graph in this result"
+              text="Application analysis and feature-tracing tools produce graph data. The complete result is available in the JSON tab."
+            />
+          )
+        ) : (
+          <>
+            <div className="result-meta">
+              <div>
+                <small>CONFIDENCE</small>
+                <strong>{e?.confidence || 'Tool result'}</strong>
+              </div>
+              <div>
+                <small>PROVIDER</small>
+                <strong>{e?.provider?.name || 'REA'}</strong>
+              </div>
+              <div>
+                <small>RECORDED</small>
+                <strong>{shortTime(run.finishedAt || run.startedAt)}</strong>
+              </div>
+            </div>
+            {e?.subject && (
+              <div className="subject-box">
+                <FileBox size={19} />
+                <div>
+                  <strong>{e.subject.name}</strong>
+                  <p>{e.subject.local_path}</p>
+                  <code>SHA-256 · {e.subject.digest?.sha256}</code>
+                </div>
+              </div>
+            )}
+            {r?.statistics && (
+              <>
+                <h3 className="result-section-heading">Analysis at a glance</h3>
+                <div className="stat-grid">
+                  {Object.entries(r.statistics)
+                    .filter(([, v]) => typeof v === 'number')
+                    .map(([k, v]) => (
+                      <div key={k}>
+                        <strong>{v.toLocaleString()}</strong>
+                        <span>{k.replaceAll('_', ' ')}</span>
+                      </div>
+                    ))}
+                </div>
+              </>
+            )}
+            {r?.summary && (
+              <>
+                <h3 className="result-section-heading">Findings</h3>
+                <JsonFacts value={r.summary} />
+              </>
+            )}
+            {graph && (
+              <div
+                className="graph-preview-link"
+                onClick={() => setTab('graph')}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => e.key === 'Enter' && setTab('graph')}
+              >
+                <Network size={23} />
+                <div>
+                  <strong>
+                    {graph.nodes?.length || 0} nodes · {graph.edges?.length || 0} relationships
+                  </strong>
+                  <p>Explore the application graph and inspect individual nodes.</p>
+                </div>
+                <ArrowRight size={18} />
+              </div>
+            )}
+            {(e?.limitations?.length || r?.limitations?.length) > 0 && (
+              <>
+                <h3 className="result-section-heading">
+                  <CircleHelp size={15} />
+                  Coverage & limitations
+                </h3>
+                <ul className="limitations">
+                  {[...new Set([...(e.limitations || []), ...(r.limitations || [])])].map(
+                    (l, i) => (
+                      <li key={i}>{l}</li>
+                    ),
+                  )}
+                </ul>
+              </>
+            )}
+            {!r?.summary && !r?.statistics && !graph && (
+              <>
+                <h3 className="result-section-heading">Result</h3>
+                <JsonFacts value={r} />
+              </>
+            )}
+            <details className="schema-details">
+              <summary>Request parameters</summary>
+              <pre>{pretty(run.args)}</pre>
+            </details>
+          </>
+        )}
+      </div>
+      <div className="modal-footer">
+        <span className="footnote">
+          <Fingerprint size={13} />
+          Original result preserved
+        </span>
+        <button
+          className="secondary"
+          disabled={!result}
+          onClick={() =>
+            navigator.clipboard
+              .writeText(jsonText)
+              .then(() => notify('Copied complete JSON'))
+              .catch((e) => notify(e.message))
+          }
+        >
+          <Copy size={14} />
+          Copy JSON
+        </button>
+        <button
+          className="primary"
+          disabled={!result}
+          onClick={() => download(run.tool + '-' + run.id.slice(0, 8) + '.json', result)}
+        >
+          <Download size={14} />
+          Download
+        </button>
+      </div>
+    </Modal>
+  );
 }
-function ProviderDialog({providers,provider,model,onSave,onClose}){const [selected,setSelected]=useState(provider),[value,setValue]=useState(model);return <Modal title="Choose your investigation agent" subtitle="Both agents use the same REA session and evidence history." onClose={onClose}><div className="modal-content"><div className="provider-options">{['codex','claude'].map(id=><button key={id} className={selected===id?'selected':''} onClick={()=>{setSelected(id);setValue('');}}><ProviderMark provider={id}/><span><strong>{id==='codex'?'ChatGPT Codex':'Claude Code'}</strong><small>{providers.find(p=>p.id===id)?.loggedIn?'Signed in and ready':'Connection required'}</small></span>{selected===id&&<Check size={17}/>}</button>)}</div><label className="standard-label">Model override <small>Optional</small><input value={value} onChange={e=>setValue(e.target.value)} placeholder="Use the CLI’s configured default"/></label><p className="muted">Leave blank to use your existing model settings. A model name must be available to your account.</p></div><div className="modal-footer"><button className="primary" onClick={()=>onSave(selected,value.trim())}>Use {selected==='codex'?'Codex':'Claude'}<Check size={15}/></button></div></Modal>}
-function RenameDialog({session,onSave,onClose}){const [name,setName]=useState(session.title);return <Modal title="Investigation settings" onClose={onClose}><div className="modal-content"><label className="standard-label">Name<input value={name} onChange={e=>setName(e.target.value)} maxLength={120}/></label><p className="muted">Archiving removes this investigation from the sidebar. Evidence remains available in the evidence library.</p></div><div className="modal-footer"><button className="text-button" onClick={()=>onSave({archived:true})}><Archive size={15}/>Archive</button><button className="primary" disabled={!name.trim()} onClick={()=>onSave({title:name.trim()})}>Save changes</button></div></Modal>}
-function CommandPalette({tools,sessions,onTool,onSession,onClose}){const [q,setQ]=useState('');const matched=tools.filter(t=>`${t.name} ${t.description}`.toLowerCase().includes(q.toLowerCase())).slice(0,35);return <Modal title="Find anything" subtitle="Search investigations and the live REA tool catalog." onClose={onClose}><div className="modal-content"><label className="search-input"><Search size={17}/><input autoFocus value={q} onChange={e=>setQ(e.target.value)} placeholder="Search…"/></label><div className="command-results">{sessions.filter(s=>s.title.toLowerCase().includes(q.toLowerCase())).slice(0,8).map(s=><button key={s.id} onClick={()=>onSession(s.id)}><Folder size={16}/><span>{s.title}</span><small>Investigation</small></button>)}{matched.map(t=><button key={t.name} onClick={()=>onTool(t)}><Terminal size={16}/><span>{t.title||title(t.name)}</span><ArrowUpRight size={13}/></button>)}</div></div></Modal>}
-function Empty({icon:Icon,title:heading,text}){return <div className="empty-state"><Icon size={30}/><h3>{heading}</h3>{text&&<p>{text}</p>}</div>}
+function JsonFacts({ value, depth = 0 }) {
+  if (value === null || value === undefined) return <span className="muted">Unknown</span>;
+  if (typeof value !== 'object') return <span className="fact-value">{String(value)}</span>;
+  const entries = Object.entries(value);
+  if (depth >= 2) return <pre className="json-block fact-json">{pretty(value).slice(0, 8000)}</pre>;
+  return (
+    <div className="json-facts">
+      {entries.slice(0, 40).map(([k, v]) => (
+        <div key={k} className={'fact ' + (typeof v === 'object' && v !== null ? 'nested' : '')}>
+          <span>{k.replaceAll('_', ' ')}</span>
+          <JsonFacts value={v} depth={depth + 1} />
+        </div>
+      ))}
+      {entries.length > 40 && (
+        <p className="muted">{entries.length - 40} additional entries in the JSON tab.</p>
+      )}
+    </div>
+  );
+}
+
+function GraphView({ graph }) {
+  const [selected, setSelected] = useState(null),
+    [zoom, setZoom] = useState(1),
+    [pan, setPan] = useState({ x: 0, y: 0 });
+  const drag = useRef(null);
+  const layout = useMemo(() => {
+    const nodes = graph.nodes.slice(0, 80).map((n, i) => ({
+      ...n,
+      x: 440 + Math.cos(i * 2.399) * Math.sqrt(i + 1) * 34,
+      y: 270 + Math.sin(i * 2.399) * Math.sqrt(i + 1) * 24,
+    }));
+    const byId = new Map(nodes.map((n) => [n.node_id || n.id, n]));
+    const edges = (graph.edges || [])
+      .map((e) => ({
+        ...e,
+        a: byId.get(e.source_node_id || e.source),
+        b: byId.get(e.target_node_id || e.target),
+      }))
+      .filter((e) => e.a && e.b);
+    for (let k = 0; k < 120; k++) {
+      for (let i = 0; i < nodes.length; i++)
+        for (let j = i + 1; j < nodes.length; j++) {
+          const a = nodes[i],
+            b = nodes[j],
+            dx = b.x - a.x || 0.1,
+            dy = b.y - a.y || 0.1,
+            d = Math.max(30, Math.hypot(dx, dy)),
+            f = 150 / d / d;
+          a.x -= dx * f;
+          a.y -= dy * f;
+          b.x += dx * f;
+          b.y += dy * f;
+        }
+      for (const e of edges) {
+        const dx = e.b.x - e.a.x,
+          dy = e.b.y - e.a.y,
+          d = Math.hypot(dx, dy) || 1,
+          f = (d - 110) * 0.007;
+        e.a.x += (dx / d) * f;
+        e.a.y += (dy / d) * f;
+        e.b.x -= (dx / d) * f;
+        e.b.y -= (dy / d) * f;
+      }
+      for (const n of nodes) {
+        n.x += (440 - n.x) * 0.001;
+        n.y += (270 - n.y) * 0.001;
+      }
+    }
+    const xs = nodes.map((n) => n.x),
+      ys = nodes.map((n) => n.y),
+      minX = Math.min(...xs),
+      minY = Math.min(...ys),
+      scale = Math.min(
+        740 / Math.max(1, Math.max(...xs) - minX),
+        420 / Math.max(1, Math.max(...ys) - minY),
+      );
+    for (const n of nodes) {
+      n.x = 70 + (n.x - minX) * scale;
+      n.y = 60 + (n.y - minY) * scale;
+    }
+    return { nodes, edges };
+  }, [graph]);
+  const colors = {
+    'ipc-channel': '#d4b787',
+    'javascript-asset': '#91afd0',
+    'context-bridge-api': '#abc8a2',
+    package: '#c7a8d3',
+    'javascript-expression': '#8cacae',
+  };
+  return (
+    <div className="graph-view">
+      <div className="graph-controls">
+        <span>
+          {layout.nodes.length} of {graph.nodes.length} nodes · drag to pan
+        </span>
+        <IconButton
+          icon={Minus}
+          label="Zoom out"
+          onClick={() => setZoom((z) => Math.max(0.35, z - 0.2))}
+        />
+        <IconButton
+          icon={Plus}
+          label="Zoom in"
+          onClick={() => setZoom((z) => Math.min(3, z + 0.2))}
+        />
+        <IconButton
+          icon={Maximize2}
+          label="Reset graph view"
+          onClick={() => {
+            setZoom(1);
+            setPan({ x: 0, y: 0 });
+          }}
+        />
+      </div>
+      <svg
+        viewBox="0 0 880 540"
+        role="group"
+        aria-label="Application relationship graph"
+        onPointerDown={(e) => {
+          if (e.target.closest('[data-node]')) return;
+          drag.current = { startX: e.clientX, startY: e.clientY, panX: pan.x, panY: pan.y };
+          e.currentTarget.setPointerCapture(e.pointerId);
+        }}
+        onPointerMove={(e) => {
+          if (drag.current) {
+            const ratio = 880 / e.currentTarget.getBoundingClientRect().width;
+            setPan({
+              x: drag.current.panX + (e.clientX - drag.current.startX) * ratio,
+              y: drag.current.panY + (e.clientY - drag.current.startY) * ratio,
+            });
+          }
+        }}
+        onPointerUp={() => (drag.current = null)}
+        onPointerCancel={() => (drag.current = null)}
+      >
+        <defs>
+          <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse">
+            <circle cx="1" cy="1" r=".7" fill="#333737" />
+          </pattern>
+        </defs>
+        <rect width="880" height="540" fill="url(#dots)" />
+        <g
+          transform={`translate(${pan.x} ${pan.y}) translate(440 270) scale(${zoom}) translate(-440 -270)`}
+        >
+          {layout.edges.map((e, i) => (
+            <line
+              key={i}
+              x1={e.a.x}
+              y1={e.a.y}
+              x2={e.b.x}
+              y2={e.b.y}
+              stroke={selected && (e.a === selected || e.b === selected) ? '#a9c5a1' : '#3c4545'}
+              strokeWidth={selected && (e.a === selected || e.b === selected) ? 2 : 1}
+            />
+          ))}
+          {layout.nodes.map((n) => (
+            <g
+              key={n.node_id || n.id}
+              data-node="true"
+              transform={`translate(${n.x} ${n.y})`}
+              onClick={() => setSelected(n)}
+              role="button"
+              tabIndex={0}
+              aria-label={n.observations?.[0]?.label || n.kind}
+              onKeyDown={(e) => e.key === 'Enter' && setSelected(n)}
+            >
+              <circle
+                r={selected === n ? 10 : 6}
+                fill={colors[n.kind] || '#9aa3aa'}
+                stroke="#202425"
+                strokeWidth="3"
+              />
+              <text
+                y="20"
+                textAnchor="middle"
+                fill={selected === n ? '#edf1ee' : '#a6adad'}
+                fontSize="10"
+              >
+                {(n.observations?.[0]?.label || n.label || n.kind || 'node').slice(0, 26)}
+              </text>
+            </g>
+          ))}
+        </g>
+      </svg>
+      {selected ? (
+        <div className="graph-node-detail">
+          <div>
+            <strong>{selected.observations?.[0]?.label || selected.kind}</strong>
+            <span className="subtle-badge">{selected.kind}</span>
+            <IconButton icon={X} label="Clear node selection" onClick={() => setSelected(null)} />
+          </div>
+          <pre>{pretty(selected).slice(0, 14000)}</pre>
+        </div>
+      ) : (
+        <p className="graph-hint">
+          Select a node to inspect its source, relationships, and authority. Edges show recorded
+          relationships, not proof of runtime execution.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function Connections({ providers, engine, tools, boot, onRefresh }) {
+  const [refreshing, setRefreshing] = useState(false);
+  const candidates = engine?.analysis_provider_candidates || [];
+  const groups = engine?.tool_availability?.groups || [];
+  const missing = groups.filter((g) => !g.available && g.reason !== 'target_required');
+  return (
+    <div className="page-scroll">
+      <div className="page-heading">
+        <span className="label">YOUR AGENTS. YOUR MACHINE.</span>
+        <div className="heading-row">
+          <h1>Connected to your workflow.</h1>
+          <button
+            className="secondary"
+            disabled={refreshing}
+            onClick={async () => {
+              setRefreshing(true);
+              await onRefresh();
+              setRefreshing(false);
+            }}
+          >
+            <RefreshCw size={14} className={refreshing ? 'spin' : ''} />
+            Refresh
+          </button>
+        </div>
+        <p>
+          Use your existing CLI sign-ins. Model access and usage follow each provider’s account.
+        </p>
+      </div>
+      <div className="provider-cards">
+        {['codex', 'claude'].map((id) => {
+          const p = providers.find((x) => x.id === id);
+          return (
+            <div className="provider-card" key={id}>
+              <div className="provider-card-top">
+                <ProviderMark provider={id} />
+                <span className={'availability ' + (p?.loggedIn ? 'available' : '')}>
+                  <span />
+                  {p?.loggedIn ? 'Connected' : p?.installed ? 'Sign in required' : 'Not installed'}
+                </span>
+              </div>
+              <h2>{id === 'codex' ? 'ChatGPT Codex' : 'Claude Code'}</h2>
+              <p>
+                {id === 'codex'
+                  ? 'Your ChatGPT-connected Codex CLI.'
+                  : 'Your Claude subscription or configured CLI account.'}
+              </p>
+              <code>{p?.version || 'CLI not detected'}</code>
+              <div className="provider-card-bottom">
+                <Check size={14} />
+                <span>Shared REA tools & evidence</span>
+              </div>
+              {!p?.loggedIn && (
+                <div className="notice">
+                  Run <code>{id === 'codex' ? 'codex login' : 'claude auth login'}</code> in your
+                  terminal, then refresh.
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      <h2 className="connections-heading">
+        Analysis engines<span>{tools.length} tools registered</span>
+      </h2>
+      <div className="engine-card">
+        <span className="service-icon">
+          <Terminal size={19} />
+        </span>
+        <div>
+          <strong>REA local engine</strong>
+          <p>{boot?.root}</p>
+          <small>One live MCP session per investigation. Results persist across restarts.</small>
+        </div>
+        <span className={'availability ' + (tools.length ? 'available' : '')}>
+          <span />
+          {tools.length ? 'Ready' : 'Unavailable'}
+        </span>
+      </div>
+      {candidates.map((c) => (
+        <div className="engine-card" key={c.provider.id}>
+          <span className="service-icon">
+            <Cpu size={19} />
+          </span>
+          <div>
+            <strong>{c.provider.name}</strong>
+            <p>{c.availability.reason || 'Configured for native analysis'}</p>
+            <small>{c.availability.diagnostics?.install_dir || c.availability.code}</small>
+          </div>
+          <span
+            className={'availability ' + (c.availability.status === 'available' ? 'available' : '')}
+          >
+            <span />
+            {c.availability.status === 'available' ? 'Available' : 'Not configured'}
+          </span>
+        </div>
+      ))}
+      <h2 className="connections-heading">Additional capabilities</h2>
+      <div className="capability-table">
+        {groups.map((g, i) => (
+          <details key={i}>
+            <summary>
+              <span className={'connection-dot ' + (g.available ? 'online' : '')} />
+              <strong>{title(g.surface || g.names[0])}</strong>
+              <span>{g.names.length} tools</span>
+              <small>
+                {g.available
+                  ? 'Available'
+                  : g.reason === 'target_required'
+                    ? 'Open a target'
+                    : g.reason?.replaceAll('_', ' ')}
+              </small>
+              <ChevronDown size={14} />
+            </summary>
+            <p>{g.remediation || 'Available with the appropriate selected input.'}</p>
+            <div className="capability-tags">
+              {g.names.map((n) => (
+                <code key={n}>{n}</code>
+              ))}
+            </div>
+            {g.effects?.length > 0 && <p>Effects: {g.effects.join(', ')}</p>}
+          </details>
+        ))}
+      </div>
+      <div className="notice">
+        <CircleHelp size={17} />
+        <span>
+          Install external engines separately and pass their documented environment variables when
+          starting Workbench. Some firmware, packet, and signal adapters require Linux. The
+          dashboard exposes these tools but cannot make unsupported hosts compatible.
+        </span>
+      </div>
+      <div className="connections-links">
+        <a
+          href="https://github.com/morluto/rea/blob/main/docs/installation.md"
+          target="_blank"
+          rel="noreferrer"
+        >
+          REA engine setup
+          <ExternalLink size={13} />
+        </a>
+        <a href="https://code.claude.com/docs/en/headless" target="_blank" rel="noreferrer">
+          Claude CLI integration
+          <ExternalLink size={13} />
+        </a>
+        <a
+          href="https://developers.openai.com/codex/noninteractive"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Codex CLI integration
+          <ExternalLink size={13} />
+        </a>
+      </div>
+    </div>
+  );
+}
+function ProviderDialog({ providers, provider, model, onSave, onClose }) {
+  const [selected, setSelected] = useState(provider),
+    [value, setValue] = useState(model);
+  return (
+    <Modal
+      title="Choose your investigation agent"
+      subtitle="Both agents use the same REA session and evidence history."
+      onClose={onClose}
+    >
+      <div className="modal-content">
+        <div className="provider-options">
+          {['codex', 'claude'].map((id) => (
+            <button
+              key={id}
+              className={selected === id ? 'selected' : ''}
+              onClick={() => {
+                setSelected(id);
+                setValue('');
+              }}
+            >
+              <ProviderMark provider={id} />
+              <span>
+                <strong>{id === 'codex' ? 'ChatGPT Codex' : 'Claude Code'}</strong>
+                <small>
+                  {providers.find((p) => p.id === id)?.loggedIn
+                    ? 'Signed in and ready'
+                    : 'Connection required'}
+                </small>
+              </span>
+              {selected === id && <Check size={17} />}
+            </button>
+          ))}
+        </div>
+        <label className="standard-label">
+          Model override <small>Optional</small>
+          <input
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            placeholder="Use the CLI’s configured default"
+          />
+        </label>
+        <p className="muted">
+          Leave blank to use your existing model settings. A model name must be available to your
+          account.
+        </p>
+      </div>
+      <div className="modal-footer">
+        <button className="primary" onClick={() => onSave(selected, value.trim())}>
+          Use {selected === 'codex' ? 'Codex' : 'Claude'}
+          <Check size={15} />
+        </button>
+      </div>
+    </Modal>
+  );
+}
+function RenameDialog({ session, onSave, onClose }) {
+  const [name, setName] = useState(session.title);
+  return (
+    <Modal title="Investigation settings" onClose={onClose}>
+      <div className="modal-content">
+        <label className="standard-label">
+          Name
+          <input value={name} onChange={(e) => setName(e.target.value)} maxLength={120} />
+        </label>
+        <p className="muted">
+          Archiving removes this investigation from the sidebar. Evidence remains available in the
+          evidence library.
+        </p>
+      </div>
+      <div className="modal-footer">
+        <button className="text-button" onClick={() => onSave({ archived: true })}>
+          <Archive size={15} />
+          Archive
+        </button>
+        <button
+          className="primary"
+          disabled={!name.trim()}
+          onClick={() => onSave({ title: name.trim() })}
+        >
+          Save changes
+        </button>
+      </div>
+    </Modal>
+  );
+}
+function CommandPalette({ tools, sessions, onTool, onSession, onClose }) {
+  const [q, setQ] = useState('');
+  const matched = tools
+    .filter((t) => `${t.name} ${t.description}`.toLowerCase().includes(q.toLowerCase()))
+    .slice(0, 35);
+  return (
+    <Modal
+      title="Find anything"
+      subtitle="Search investigations and the live REA tool catalog."
+      onClose={onClose}
+    >
+      <div className="modal-content">
+        <label className="search-input">
+          <Search size={17} />
+          <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search…" />
+        </label>
+        <div className="command-results">
+          {sessions
+            .filter((s) => s.title.toLowerCase().includes(q.toLowerCase()))
+            .slice(0, 8)
+            .map((s) => (
+              <button key={s.id} onClick={() => onSession(s.id)}>
+                <Folder size={16} />
+                <span>{s.title}</span>
+                <small>Investigation</small>
+              </button>
+            ))}
+          {matched.map((t) => (
+            <button key={t.name} onClick={() => onTool(t)}>
+              <Terminal size={16} />
+              <span>{t.title || title(t.name)}</span>
+              <ArrowUpRight size={13} />
+            </button>
+          ))}
+        </div>
+      </div>
+    </Modal>
+  );
+}
+function Empty({ icon: Icon, title: heading, text }) {
+  return (
+    <div className="empty-state">
+      <Icon size={30} />
+      <h3>{heading}</h3>
+      {text && <p>{text}</p>}
+    </div>
+  );
+}
+
+export { ToolDialog, Connections, GraphView, ToolLibrary, EvidenceLibrary };
